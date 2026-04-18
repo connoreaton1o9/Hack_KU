@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Life After Graduation — Financial Planning Game</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #f8f7f4;
+    --surface:   #ffffff;
+    --surface2:  #f2f0ec;
+    --border:    rgba(0,0,0,0.10);
+    --border2:   rgba(0,0,0,0.18);
+    --text:      #1a1a18;
+    --text2:     #5a5955;
+    --text3:     #999790;
+    --blue:      #2563eb;
+    --blue-bg:   #eff6ff;
+    --blue-text: #1d4ed8;
+    --green:     #16a34a;
+    --green-bg:  #f0fdf4;
+    --green-text:#15803d;
+    --red:       #dc2626;
+    --red-bg:    #fef2f2;
+    --red-text:  #b91c1c;
+    --amber:     #d97706;
+    --amber-bg:  #fffbeb;
+    --amber-text:#b45309;
+    --radius:    12px;
+    --radius-sm: 8px;
+    --shadow:    0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:        #141412;
+      --surface:   #1e1d1b;
+      --surface2:  #2a2927;
+      --border:    rgba(255,255,255,0.10);
+      --border2:   rgba(255,255,255,0.18);
+      --text:      #f0efe9;
+      --text2:     #a8a59e;
+      --text3:     #6b6965;
+      --blue:      #60a5fa;
+      --blue-bg:   #1e3a5f;
+      --blue-text: #93c5fd;
+      --green:     #4ade80;
+      --green-bg:  #14532d;
+      --green-text:#86efac;
+      --red:       #f87171;
+      --red-bg:    #7f1d1d;
+      --red-text:  #fca5a5;
+      --amber:     #fbbf24;
+      --amber-bg:  #78350f;
+      --amber-text:#fcd34d;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .page { max-width: 720px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+  /* screens */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ── Intro ── */
+  .intro-hero {
+    text-align: center;
+    padding: 3rem 2rem 2.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+  .hero-emoji { font-size: 52px; display: block; margin-bottom: 1rem; }
+  .hero-title { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+  .hero-sub { font-size: 1rem; color: var(--text2); max-width: 440px; margin: 0 auto 1.75rem; line-height: 1.7; }
+  .badge-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 2rem; }
+  .badge { background: var(--surface2); border: 1px solid var(--border); border-radius: 999px;
+           padding: 5px 14px; font-size: 13px; color: var(--text2); }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 11px 22px; border-radius: var(--radius-sm);
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--border2);
+    background: var(--surface); color: var(--text);
+    transition: background 0.12s, transform 0.1s, box-shadow 0.12s;
+  }
+  .btn:hover { background: var(--surface2); }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .btn-primary:hover { opacity: 0.9; background: var(--blue); }
+  .btn-sm { padding: 8px 16px; font-size: 13px; }
+
+  /* ── Progress ── */
+  .progress-wrap { margin-bottom: 1.75rem; }
+  .progress-track { display: flex; gap: 5px; margin-bottom: 7px; }
+  .p-seg { flex: 1; height: 5px; border-radius: 3px; background: var(--border); transition: background 0.3s; }
+  .p-seg.done { background: var(--blue); }
+  .p-seg.active { background: var(--blue); opacity: 0.45; }
+  .progress-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--text3); }
+
+  /* ── Chapter header ── */
+  .ch-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+                color: var(--blue); margin-bottom: 4px; }
+  .ch-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 0.75rem; }
+  .ch-story {
+    font-size: 14px; color: var(--text2); line-height: 1.7;
+    background: var(--surface2); border-left: 3px solid var(--blue);
+    padding: 12px 16px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    margin-bottom: 1.5rem;
+  }
+
+  /* ── Choice grid ── */
+  .choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem; }
+  @media (max-width: 520px) { .choices-grid { grid-template-columns: 1fr; } }
+
+  .choice-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.1rem 1rem;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.12s;
+    text-align: left;
+    position: relative;
+  }
+  .choice-card:hover { border-color: var(--border2); box-shadow: var(--shadow); }
+  .choice-card.selected { border-color: var(--blue); background: var(--blue-bg); }
+  .choice-card.selected .ch-icon { transform: scale(1.1); }
+  .selected-mark {
+    position: absolute; top: 10px; right: 10px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--blue); display: none;
+    align-items: center; justify-content: center;
+    font-size: 11px; color: #fff; font-weight: 700;
+  }
+  .choice-card.selected .selected-mark { display: flex; }
+
+  .ch-icon { font-size: 24px; margin-bottom: 8px; display: block; transition: transform 0.2s; }
+  .ch-name { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 5px; }
+  .choice-card.selected .ch-name { color: var(--blue-text); }
+  .ch-desc { font-size: 13px; color: var(--text2); line-height: 1.55; margin-bottom: 10px; }
+  .tags { display: flex; gap: 5px; flex-wrap: wrap; }
+  .tag { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 999px; }
+  .tag-green  { background: var(--green-bg);  color: var(--green-text); }
+  .tag-red    { background: var(--red-bg);    color: var(--red-text); }
+  .tag-amber  { background: var(--amber-bg);  color: var(--amber-text); }
+  .tag-blue   { background: var(--blue-bg);   color: var(--blue-text); }
+
+  /* ── Nav row ── */
+  .nav-row { display: flex; justify-content: space-between; align-items: center; }
+
+  /* ── Results ── */
+  .results-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
+                     text-transform: uppercase; color: var(--text3); margin-bottom: 4px; }
+  .results-headline { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 1.5rem; }
+
+  .score-wrap { display: flex; align-items: center; gap: 1.25rem; margin-bottom: 1.5rem;
+                background: var(--surface); border: 1px solid var(--border);
+                border-radius: var(--radius); padding: 1.25rem; box-shadow: var(--shadow); }
+  .score-ring { width: 80px; height: 80px; border-radius: 50%; border: 4px solid var(--blue);
+                display: flex; flex-direction: column; align-items: center; justify-content: center;
+                background: var(--blue-bg); flex-shrink: 0; }
+  .score-num { font-size: 28px; font-weight: 800; color: var(--blue-text); line-height: 1; }
+  .score-lbl { font-size: 10px; color: var(--blue-text); font-weight: 600; letter-spacing: 0.05em; }
+  .score-text-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .score-text-body  { font-size: 13px; color: var(--text2); line-height: 1.5; }
+
+  .outcome-banner { padding: 1rem 1.25rem; border-radius: var(--radius); margin-bottom: 1.5rem; }
+  .ob-green  { background: var(--green-bg);  border: 1px solid rgba(22,163,74,0.25); }
+  .ob-amber  { background: var(--amber-bg);  border: 1px solid rgba(217,119,6,0.25); }
+  .ob-red    { background: var(--red-bg);    border: 1px solid rgba(220,38,38,0.25); }
+  .ob-title  { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .ob-green .ob-title  { color: var(--green-text); }
+  .ob-amber .ob-title  { color: var(--amber-text); }
+  .ob-red   .ob-title  { color: var(--red-text); }
+  .ob-body   { font-size: 13px; line-height: 1.55; }
+  .ob-green .ob-body   { color: var(--green-text); }
+  .ob-amber .ob-body   { color: var(--amber-text); }
+  .ob-red   .ob-body   { color: var(--red-text); }
+
+  .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+  @media (max-width: 520px) { .metrics-grid { grid-template-columns: 1fr 1fr; } }
+  .metric-card { background: var(--surface2); border-radius: var(--radius-sm); padding: 0.9rem; }
+  .metric-label { font-size: 11px; color: var(--text3); font-weight: 600;
+                  letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px; }
+  .metric-value { font-size: 20px; font-weight: 800; color: var(--text); }
+  .metric-sub   { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  .section-title { font-size: 15px; font-weight: 700; margin-bottom: 0.75rem; padding-top: 0.25rem; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 1.25rem 0; }
+
+  /* ── Chart ── */
+  .chart-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+                padding: 1rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); }
+  .chart-canvas-wrap { position: relative; height: 200px; }
+
+  /* ── Events ── */
+  .events-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.5rem; }
+  .event-item {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 14px; box-shadow: var(--shadow);
+  }
+  .event-age { font-size: 12px; font-weight: 700; color: var(--text3); min-width: 42px; padding-top: 1px; }
+  .event-icon { font-size: 16px; min-width: 22px; }
+  .event-text { font-size: 13px; color: var(--text2); line-height: 1.5; }
+
+  /* ── Insights ── */
+  .insights-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 2rem; }
+  @media (max-width: 520px) { .insights-grid { grid-template-columns: 1fr; } }
+  .insight-card { background: var(--surface); border: 1px solid var(--border);
+                  border-radius: var(--radius-sm); padding: 1rem; box-shadow: var(--shadow); }
+  .insight-label { font-size: 12px; font-weight: 700; text-transform: uppercase;
+                   letter-spacing: 0.06em; margin-bottom: 6px; }
+  .insight-label.green  { color: var(--green); }
+  .insight-label.red    { color: var(--red); }
+  .insight-label.blue   { color: var(--blue); }
+  .insight-label.amber  { color: var(--amber); }
+  .insight-body { font-size: 13px; color: var(--text2); line-height: 1.55; }
+
+  /* ── Footer nav ── */
+  .results-nav { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* ── Transitions ── */
+  .screen { animation: fadeIn 0.25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ═══════════════ INTRO ═══════════════ -->
+<div id="screen-intro" class="screen active">
+  <div class="intro-hero">
+    <span class="hero-emoji">🎓</span>
+    <h1 class="hero-title">Your life starts now</h1>
+    <p class="hero-sub">You just graduated. You have a degree, some debt, and a world of choices ahead. Every decision in the next 15 years will shape your financial future.</p>
+    <div class="badge-row">
+      <span class="badge">Age 22 — Graduation</span>
+      <span class="badge">5 chapters</span>
+      <span class="badge">Your path, your rules</span>
+    </div>
+    <button class="btn btn-primary" onclick="startGame()">Begin your journey →</button>
+  </div>
+</div>
+
+<!-- ═══════════════ CHAPTER ═══════════════ -->
+<div id="screen-chapter" class="screen">
+  <div class="progress-wrap">
+    <div class="progress-track" id="progressTrack"></div>
+    <div class="progress-meta">
+      <span id="progressLabel"></span>
+      <span id="progressAge"></span>
+    </div>
+  </div>
+  <div class="ch-eyebrow" id="chEyebrow"></div>
+  <h2 class="ch-title" id="chTitle"></h2>
+  <div class="ch-story" id="chStory"></div>
+  <div class="choices-grid" id="choicesGrid"></div>
+  <div class="nav-row">
+    <button class="btn btn-sm" id="backBtn" onclick="goBack()">← Back</button>
+    <button class="btn btn-sm btn-primary" id="nextBtn" onclick="nextChapter()" disabled>Continue →</button>
+  </div>
+</div>
+
+<!-- ═══════════════ RESULTS ═══════════════ -->
+<div id="screen-results" class="screen">
+  <div class="results-eyebrow">Your financial story</div>
+  <h2 class="results-headline">Age 37: Your financial snapshot</h2>
+
+  <div class="score-wrap">
+    <div class="score-ring">
+      <div class="score-num" id="scoreNum">0</div>
+      <div class="score-lbl">SCORE</div>
+    </div>
+    <div>
+      <div class="score-text-title" id="scoreTitle"></div>
+      <div class="score-text-body" id="scoreBody"></div>
+    </div>
+  </div>
+
+  <div id="outcomeBanner" class="outcome-banner ob-amber">
+    <div class="ob-title" id="outcomeTitle"></div>
+    <div class="ob-body" id="outcomeBody"></div>
+  </div>
+
+  <div class="metrics-grid" id="metricsGrid"></div>
+
+  <div class="chart-wrap">
+    <div class="section-title">Net worth over time</div>
+    <div class="chart-canvas-wrap">
+      <canvas id="nwChart"></canvas>
+    </div>
+  </div>
+
+  <div class="section-title">Key life events</div>
+  <div class="events-list" id="eventsList"></div>
+
+  <hr class="divider">
+  <div class="section-title">Insights</div>
+  <div class="insights-grid" id="insightsGrid"></div>
+
+  <div class="results-nav">
+    <button class="btn" onclick="restartGame()">← Try again</button>
+    <button class="btn btn-sm btn-primary" onclick="shareResults()">Share results 🔗</button>
+  </div>
+  <div id="shareMsg" style="font-size:13px;color:var(--text3);margin-top:8px;"></div>
+</div>
+
+</div><!-- /page -->
+
+<script>
+const CHAPTERS = [
+  {
+    id:"career", label:"Chapter 1", eyebrow:"Chapter 1  ·  Age 22",
+    title:"The first fork in the road",
+    story:"It's graduation week. Your inbox has two responses. Your phone keeps buzzing with your parents asking about your plans. What you choose now will shape the next decade.",
+    choices:[
+      {id:"bigtech",   icon:"💻", title:"Big Tech job",        desc:"$95K salary at a large tech company. High pressure, long hours, but strong comp and rapid career growth.",       tags:[["income↑","green"],["stress↑","red"],["growth↑","blue"]],   salary:95000, stress:7, growth:9},
+      {id:"nonprofit", icon:"🌱", title:"Nonprofit work",      desc:"$42K at a mission-driven org. Meaningful work and PSLF loan forgiveness eligibility after 10 years.",            tags:[["fulfillment↑","green"],["forgiveness","blue"],["income↓","amber"]], salary:42000, stress:4, growth:5},
+      {id:"startup",   icon:"🚀", title:"Early-stage startup", desc:"$65K + equity. Risky but with real upside potential. 60% chance the company succeeds.",                          tags:[["equity","green"],["risk↑","red"],["learning↑","blue"]],      salary:65000, stress:8, growth:8},
+      {id:"gradschool",icon:"📚", title:"Graduate school",     desc:"2-year program, $22K stipend or $60K more loans. Higher earning ceiling afterwards.",                             tags:[["credentials","blue"],["debt risk","red"],["ceiling↑","green"]], salary:22000, stress:6, growth:7},
+    ]
+  },
+  {
+    id:"housing", label:"Chapter 2", eyebrow:"Chapter 2  ·  Age 23",
+    title:"Where do you live?",
+    story:"Your lease is up. Rent in your city just jumped 18%. Your college roommate wants to buy a house together. A family friend offers a cheap room back home. What's the move?",
+    choices:[
+      {id:"rent_city",  icon:"🏙️", title:"Rent in the city",       desc:"$1,800/mo for a 1BR. Close to work and social life, but expensive.",                                    tags:[["convenience","blue"],["high cost","red"]],               rent:1800, savings_mod:-0.15, equity:0},
+      {id:"buy_house",  icon:"🏠", title:"Buy with roommate",       desc:"Split a starter home. $2,200/mo mortgage total ($1,100 each). Builds equity but illiquid.",             tags:[["equity","green"],["illiquid","amber"],["risk","red"]],   rent:1100, savings_mod:0.05,  equity:120000},
+      {id:"rent_cheap", icon:"🏘️", title:"Cheap suburban rental",  desc:"$950/mo with roommates. Long commute, but frees up significant monthly cash.",                           tags:[["savings↑","green"],["commute","red"]],                   rent:950,  savings_mod:0.20,  equity:0},
+      {id:"family",     icon:"👨‍👩‍👧", title:"Move back home",       desc:"$300/mo to family. Maximum savings potential with some social tradeoffs.",                               tags:[["max savings","green"],["social↓","amber"]],              rent:300,  savings_mod:0.35,  equity:0},
+    ]
+  },
+  {
+    id:"debt", label:"Chapter 3", eyebrow:"Chapter 3  ·  Age 24",
+    title:"Dealing with the loans",
+    story:"You have $38,000 in student loans (more if grad school). Your 6-month grace period just ended. The minimum payment is $380/month. But there are other strategies worth considering.",
+    choices:[
+      {id:"minimum",    icon:"🐢", title:"Minimum payments",    desc:"Pay $380/mo. Keep cash free for investing and life. Loans paid off in ~10 years.",                                          tags:[["cash flow","green"],["interest↑","red"]],              debt_payment:380,  debt_years:10, invest_mod:1.0},
+      {id:"aggressive", icon:"💪", title:"Aggressive payoff",   desc:"Pay $1,200/mo. Debt-free in ~3 years, then redirect everything to investing.",                                              tags:[["debt-free","green"],["cash-poor","red"]],              debt_payment:1200, debt_years:3,  invest_mod:0.4},
+      {id:"refinance",  icon:"🔄", title:"Refinance + balance", desc:"Refinance to 4.5% rate, pay $600/mo. A middle path between speed and flexibility.",                                        tags:[["lower rate","green"],["balanced","blue"]],             debt_payment:600,  debt_years:7,  invest_mod:0.7},
+      {id:"forgiveness",icon:"🎁", title:"Pursue forgiveness",  desc:"Income-driven plan ($180/mo). Aim for PSLF if at nonprofit. Long game, potentially powerful.",                             tags:[["low payments","green"],["risky","amber"],["long term","blue"]], debt_payment:180, debt_years:20, invest_mod:1.2},
+    ]
+  },
+  {
+    id:"lifestyle", label:"Chapter 4", eyebrow:"Chapter 4  ·  Age 26",
+    title:"The upgrade temptation",
+    story:"Two years in, you got a raise. You're making more, but lifestyle creep is real. Your friends are booking European vacations. Your car just died. How do you handle the extra income?",
+    choices:[
+      {id:"lifestyle_up",  icon:"✈️", title:"Upgrade your lifestyle",    desc:"New car, nice apartment, travel twice a year. Enjoy the fruits of your hard work now.",                       tags:[["enjoyment","green"],["savings↓","red"]],           lifestyle_cost:1500, savings_rate_boost:-0.03, side_income:0},
+      {id:"invest_first",  icon:"📈", title:"Invest most of the raise",  desc:"Keep lifestyle flat, funnel 80% of raise into index funds and max out 401k contributions.",                   tags:[["wealth↑","green"],["discipline","blue"]],          lifestyle_cost:300,  savings_rate_boost:0.12,  side_income:0},
+      {id:"balanced_life", icon:"⚖️", title:"Balance it out",            desc:"50/50 split: half the raise to lifestyle improvements, half to savings.",                                      tags:[["balance","blue"],["steady","green"]],              lifestyle_cost:700,  savings_rate_boost:0.06,  side_income:0},
+      {id:"side_hustle",   icon:"💡", title:"Start a side hustle",       desc:"Launch freelance work. Extra $15K/yr potential, but costs ~15 hours per week.",                               tags:[["income+","green"],["time↓","red"],["optionality","blue"]], lifestyle_cost:400, savings_rate_boost:0.15, side_income:15000},
+    ]
+  },
+  {
+    id:"emergency", label:"Chapter 5", eyebrow:"Chapter 5  ·  Age 28",
+    title:"When life hits hard",
+    story:"It's been 6 years since graduation. Out of nowhere: a layoff, a medical bill, or a family emergency totaling $8–12K. How prepared are you — and how do you respond?",
+    choices:[
+      {id:"prepared",       icon:"🛡️", title:"Use the emergency fund",  desc:"You have 6 months of expenses saved. Bridge the gap without touching investments.",                         tags:[["resilient","green"],["prepared","blue"]],               emergency_cost:0,     stress_event:false},
+      {id:"credit",         icon:"💳", title:"Put it on credit cards",  desc:"Charge $8,000 at 22% APR. Takes 18 months to pay off. A significant but recoverable setback.",              tags:[["quick fix","amber"],["debt+","red"]],                  emergency_cost:8000,  stress_event:true},
+      {id:"withdraw_401k",  icon:"📉", title:"Withdraw from 401k",      desc:"Pull $12K early. 10% penalty + income tax + you lose all future compound growth on that money.",            tags:[["available","amber"],["costly","red"],["penalty","red"]], emergency_cost:16000, stress_event:true},
+      {id:"family_loan",    icon:"🤝", title:"Borrow from family",      desc:"Interest-free loan from family. Paid back over 2 years with some relational tension.",                      tags:[["low cost","green"],["relational","amber"]],             emergency_cost:2000,  stress_event:false},
+    ]
+  }
+];
+
+let currentChapter = 0;
+let selections = {};
+let chartInstance = null;
+
+function startGame() {
+  show("screen-chapter");
+  renderChapter();
+}
+
+function show(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  window.scrollTo(0, 0);
+}
+
+function renderChapter() {
+  const ch = CHAPTERS[currentChapter];
+  const total = CHAPTERS.length;
+
+  // progress
+  const track = document.getElementById("progressTrack");
+  track.innerHTML = CHAPTERS.map((_, i) => {
+    const cls = i < currentChapter ? "done" : i === currentChapter ? "active" : "";
+    return `<div class="p-seg ${cls}"></div>`;
+  }).join("");
+  document.getElementById("progressLabel").textContent = `Chapter ${currentChapter + 1} of ${total}`;
+  document.getElementById("progressAge").textContent = ch.eyebrow.split("·")[1]?.trim() || "";
+
+  document.getElementById("chEyebrow").textContent = ch.eyebrow;
+  document.getElementById("chTitle").textContent   = ch.title;
+  document.getElementById("chStory").textContent   = ch.story;
+
+  const already = selections[ch.id];
+  document.getElementById("choicesGrid").innerHTML = ch.choices.map(c => `
+    <div class="choice-card ${already === c.id ? "selected" : ""}" onclick="selectChoice('${ch.id}','${c.id}')">
+      <div class="selected-mark">✓</div>
+      <span class="ch-icon">${c.icon}</span>
+      <div class="ch-name">${c.title}</div>
+      <div class="ch-desc">${c.desc}</div>
+      <div class="tags">${c.tags.map(([l, t]) => `<span class="tag tag-${t}">${l}</span>`).join("")}</div>
+    </div>
+  `).join("");
+
+  document.getElementById("backBtn").style.visibility = currentChapter === 0 ? "hidden" : "visible";
+  document.getElementById("nextBtn").disabled = !already;
+}
+
+function selectChoice(chId, choiceId) {
+  selections[chId] = choiceId;
+  renderChapter();
+}
+
+function goBack() {
+  if (currentChapter > 0) { currentChapter--; renderChapter(); }
+}
+
+function nextChapter() {
+  if (currentChapter < CHAPTERS.length - 1) {
+    currentChapter++;
+    renderChapter();
+  } else {
+    buildResults();
+    show("screen-results");
+  }
+}
+
+// ── Simulation ──────────────────────────────────────────────────────────────
+function computeResults() {
+  const career    = CHAPTERS[0].choices.find(c => c.id === selections.career);
+  const housing   = CHAPTERS[1].choices.find(c => c.id === selections.housing);
+  const debt      = CHAPTERS[2].choices.find(c => c.id === selections.debt);
+  const lifestyle = CHAPTERS[3].choices.find(c => c.id === selections.lifestyle);
+  const emergency = CHAPTERS[4].choices.find(c => c.id === selections.emergency);
+
+  let salary = selections.career === "gradschool" ? 90000 : career.salary;
+  const salaryGrowth = career.growth * 0.01 + 0.02;
+  const sideIncome   = lifestyle.side_income || 0;
+  let studentDebt    = selections.career === "gradschool" ? 98000 : 38000;
+  if (selections.debt === "forgiveness" && selections.career === "nonprofit") studentDebt = 0;
+
+  const debtPmt   = debt.debt_payment;
+  const debtYrs   = Math.min(debt.debt_years, 10);
+  const investMod = debt.invest_mod;
+  const savingsRate = Math.max(0.03, Math.min(0.45,
+    0.10 + lifestyle.savings_rate_boost + housing.savings_mod));
+
+  const nwByYear = [{ age: 22, nw: -studentDebt }];
+  let investments = 0, remDebt = studentDebt, curSalary = salary;
+
+  for (let yr = 1; yr <= 15; yr++) {
+    curSalary *= (1 + salaryGrowth);
+    const annSavings = (curSalary + sideIncome) * savingsRate * investMod;
+    remDebt = Math.max(0, remDebt - debtPmt * 12 * (yr <= debtYrs ? 1 : 0));
+    investments = (investments + Math.max(0, annSavings)) * 1.07;
+    if (yr === 6) investments = Math.max(0, investments - emergency.emergency_cost);
+    const equity = housing.equity ? housing.equity * (1 + 0.04 * yr) - housing.equity : 0;
+    nwByYear.push({ age: 22 + yr, nw: Math.round(investments - remDebt + equity) });
+  }
+
+  const finalNW = nwByYear[nwByYear.length - 1].nw;
+  const finalSalary = Math.round(curSalary + sideIncome);
+  const debtFreeAge = 22 + debtYrs;
+
+  let score = 50;
+  if (finalNW > 200000) score += 20; else if (finalNW > 100000) score += 10; else if (finalNW < 0) score -= 20;
+  if (savingsRate > 0.15) score += 10;
+  if (emergency.stress_event) score -= 10;
+  if (["buy_house","family"].includes(selections.housing)) score += 5;
+  score = Math.max(12, Math.min(99, score));
+
+  const events = [
+    { age: 22, icon: "🎓", text: `Graduated. Accepted ${career.title} offer.` },
+    { age: 23, icon: "🏠", text: `Housing: ${housing.title}. Monthly cost: $${housing.rent.toLocaleString()}.` },
+    { age: 24, icon: "💸", text: `Debt strategy: ${debt.title} on $${studentDebt.toLocaleString()}.` },
+  ];
+  if (selections.career === "gradschool") events.push({ age: 24, icon: "📚", text: "Finished grad school, started higher-paying career." });
+  events.push({ age: 26, icon: "💰", text: `Got a raise. Choice: ${lifestyle.title}.` });
+  if (sideIncome) events.push({ age: 27, icon: "💡", text: `Side hustle generating ~$${sideIncome / 1000}K/yr.` });
+  events.push({ age: 28, icon: emergency.stress_event ? "⚠️" : "✅", text: `Emergency hit. Response: ${emergency.title}. Cost: $${emergency.emergency_cost.toLocaleString()}.` });
+  if (debtFreeAge <= 37) events.push({ age: debtFreeAge, icon: "🎉", text: "Student loans fully paid off!" });
+  events.push({ age: 37, icon: "📊", text: `Net worth reaches $${Math.round(finalNW / 1000)}K at age 37.` });
+  events.sort((a, b) => a.age - b.age);
+
+  return { nwByYear, finalNW, finalSalary, score, events, savingsRate, debtFreeAge };
+}
+
+function fmt(n) {
+  return n >= 0 ? `$${Math.round(n / 1000)}K` : `-$${Math.round(Math.abs(n) / 1000)}K`;
+}
+
+function topInsight() {
+  if (selections.career === "bigtech") return "Your high starting salary accelerated compound growth from day one — the single biggest lever in the simulation.";
+  if (["family","rent_cheap"].includes(selections.housing)) return "Low housing costs freed up capital that compounded significantly over 15 years.";
+  if (selections.lifestyle === "invest_first") return "Investing most of your raise before lifestyle inflated was the highest-leverage mid-20s decision.";
+  return "Staying disciplined through multiple life transitions maintained steady savings momentum.";
+}
+function worstInsight() {
+  if (selections.emergency === "withdraw_401k") return "Withdrawing from your 401k cost you both the penalty/tax and years of future compound growth.";
+  if (selections.emergency === "credit") return "High-interest credit card debt during the emergency erased months of savings progress.";
+  if (selections.lifestyle === "lifestyle_up") return "Upgrading lifestyle after your raise locked in high fixed costs before your savings base was solid.";
+  if (selections.housing === "rent_city") return "City rent consumed a large income share, limiting investment during your prime compounding years.";
+  return "Without a tight savings strategy, small spending decisions gradually eroded your savings rate.";
+}
+function advice(r) {
+  if (r.finalNW < 50000) return "Try maxing your 401k first — the tax break improves outcomes and forces savings discipline automatically.";
+  if (["credit","withdraw_401k"].includes(selections.emergency)) return "Build a 3-6 month emergency fund before aggressive investing. One crisis without a buffer can set you back 2-3 years.";
+  if (selections.lifestyle === "lifestyle_up") return "Try 'pay yourself first': automate savings before you see the money so lifestyle spending is naturally constrained.";
+  return "You're on a solid path. Next: Roth IRA, HSA, and ensuring your allocation matches your time horizon.";
+}
+
+function buildResults() {
+  const r = computeResults();
+  const score = r.score;
+  const nwStr = fmt(r.finalNW);
+  const isGood = score >= 65, isMid = score >= 45;
+
+  document.getElementById("scoreNum").textContent = score;
+  document.getElementById("scoreTitle").textContent = isGood ? "Strong financial foundation" : isMid ? "Steady progress" : "Rebuilding is always possible";
+  document.getElementById("scoreBody").textContent  = isGood
+    ? "Disciplined choices compounded over 15 years into a strong base."
+    : isMid ? "Solid choices overall, but a few tradeoffs slowed momentum."
+    : "Setbacks hit hard. The good news: the next 15 years matter even more.";
+
+  const banner = document.getElementById("outcomeBanner");
+  banner.className = "outcome-banner " + (isGood ? "ob-green" : isMid ? "ob-amber" : "ob-red");
+  document.getElementById("outcomeTitle").textContent = isGood ? "Strong financial foundation built" : isMid ? "Steady progress, room to grow" : "Rebuilding is always possible";
+  document.getElementById("outcomeBody").textContent = isGood
+    ? `Net worth ${nwStr} · Salary $${Math.round(r.finalSalary/1000)}K/yr. Your decisions in your mid-20s made the biggest difference.`
+    : isMid ? `Net worth ${nwStr} · Salary $${Math.round(r.finalSalary/1000)}K/yr. Small adjustments in debt strategy or savings rate could meaningfully shift the outcome.`
+    : `Net worth ${nwStr} · Salary $${Math.round(r.finalSalary/1000)}K/yr. Changing your savings rate by even 5% dramatically shifts the trajectory from here.`;
+
+  document.getElementById("metricsGrid").innerHTML = [
+    ["Net worth", nwStr, "at age 37"],
+    ["Salary", `$${Math.round(r.finalSalary/1000)}K`, "after 15 yrs"],
+    ["Debt-free", `Age ${r.debtFreeAge}`, "student loans"],
+    ["Savings rate", `${Math.round(r.savingsRate*100)}%`, "of income"],
+  ].map(([l,v,s]) => `<div class="metric-card"><div class="metric-label">${l}</div><div class="metric-value">${v}</div><div class="metric-sub">${s}</div></div>`).join("");
+
+  document.getElementById("eventsList").innerHTML = r.events.map(e =>
+    `<div class="event-item"><div class="event-age">Age ${e.age}</div><div class="event-icon">${e.icon}</div><div class="event-text">${e.text}</div></div>`
+  ).join("");
+
+  document.getElementById("insightsGrid").innerHTML = [
+    ["What helped most", "green", topInsight()],
+    ["What hurt most", "red", worstInsight()],
+    ["What to change", "blue", advice(r)],
+    ["Compound effect", "amber", "Every extra $100/mo saved at 22 becomes ~$5,800 by 37 at 7% return. Your choices determined how much of that potential you captured."],
+  ].map(([l,c,b]) => `<div class="insight-card"><div class="insight-label ${c}">${l}</div><div class="insight-body">${b}</div></div>`).join("");
+
+  if (chartInstance) chartInstance.destroy();
+  const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const labels = r.nwByYear.map(d => `Age ${d.age}`);
+  const values = r.nwByYear.map(d => d.nw);
+  const positive = r.finalNW >= 0;
+  const lineColor = positive ? (isDark ? "#60a5fa" : "#2563eb") : (isDark ? "#f87171" : "#dc2626");
+  const fillColor = positive ? (isDark ? "rgba(96,165,250,0.08)" : "rgba(37,99,235,0.07)") : (isDark ? "rgba(248,113,113,0.08)" : "rgba(220,38,38,0.07)");
+
+  chartInstance = new Chart(document.getElementById("nwChart").getContext("2d"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        borderColor: lineColor,
+        backgroundColor: fillColor,
+        borderWidth: 2,
+        pointRadius: 3,
+        pointBackgroundColor: lineColor,
+        fill: true,
+        tension: 0.4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${fmt(ctx.raw)}` } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 }, maxTicksLimit: 8, color: isDark ? "#6b6965" : "#999790" }},
+        y: { grid: { color: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)" },
+             ticks: { font: { size: 11 }, callback: v => fmt(v), color: isDark ? "#6b6965" : "#999790" }}
+      }
+    }
+  });
+}
+
+function restartGame() {
+  selections = {};
+  currentChapter = 0;
+  show("screen-intro");
+}
+
+function shareResults() {
+  const r = computeResults();
+  const text = `I just played Life After Graduation! My net worth at 37: ${fmt(r.finalNW)} · Score: ${r.score}/99`;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      document.getElementById("shareMsg").textContent = "Copied to clipboard!";
+      setTimeout(() => document.getElementById("shareMsg").textContent = "", 2500);
+    });
+  }
+}
+</script>
+</body>
+</html>
