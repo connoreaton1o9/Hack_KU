@@ -934,20 +934,18 @@ function renderBackgroundChoices() {
 }
 
 function renderAllChoices() {
-  renderChoiceGrid('post-hs-choices', gameData.post_hs_choices, 'post_hs', selectPostHS);
-  renderChoiceGrid('career-choices', gameData.career_choices, 'career', selectCareer);
-  renderChoiceGrid('housing-choices', gameData.housing_choices, 'housing', sel => selectChoice('housing', sel, 'housing-next'));
-  renderChoiceGrid('debt-choices', gameData.debt_choices, 'debt', sel => selectChoice('debt', sel, 'debt-next'));
-  renderChoiceGrid('lifestyle-choices', gameData.lifestyle_choices, 'lifestyle', sel => selectChoice('lifestyle', sel, 'lifestyle-next'));
-  renderChoiceGrid('emergency-choices', gameData.emergency_choices, 'emergency', sel => selectChoice('emergency', sel, 'emergency-next'));
+  // Choices are rendered on-demand per screen via renderChoiceGrid calls in each goTo* function
 }
 
-function renderChoiceGrid(containerId, choices, type, onClick) {
+// onClickFnName must be a global function name string, e.g. 'selectPostHS'
+function renderChoiceGrid(containerId, choices, type, onClickFnName) {
   const container = document.getElementById(containerId);
   if (!container) return;
   container.innerHTML = choices.map(c => `
-    <div class="choice-card" id="choice-${type}-${c.id}" onclick="(${onClick.toString()})('${c.id}')">
-      <div class="selected-mark">✓</div>
+    <div class="choice-card ${selections[type] === c.id ? 'selected' : ''}"
+         data-choice-id="${c.id}"
+         onclick="${onClickFnName}('${c.id}')">
+      <div class="selected-mark">&#10003;</div>
       ${c.icon ? `<span class="card-icon">${c.icon}</span>` : ''}
       <div class="card-name">${c.title}</div>
       <div class="card-desc">${c.desc}</div>
@@ -1091,20 +1089,9 @@ function updateDots(dotContainerId, labelId, activeChapter) {
 function renderPostHSChoices() {
   updateDots('chapter-dots', 'chapter-progress-label', 0);
   document.getElementById('chapter-age-label').textContent = 'Age 18';
-  
-  const container = document.getElementById('post-hs-choices');
-  container.innerHTML = gameData.post_hs_choices.map(c => `
-    <div class="choice-card ${selections.post_hs === c.id ? 'selected' : ''}" onclick="selectPostHS('${c.id}')">
-      <div class="selected-mark">✓</div>
-      <span class="card-icon">${c.icon}</span>
-      <div class="card-name">${c.title}</div>
-      <div class="card-desc">${c.desc}</div>
-      <div class="tags">${(c.tags || []).map(([l, t]) => `<span class="tag tag-${t}">${l}</span>`).join('')}</div>
-    </div>
-  `).join('');
+  renderChoiceGrid('post-hs-choices', gameData.post_hs_choices, 'post_hs', 'selectPostHS');
   document.getElementById('post-hs-next').disabled = !selections.post_hs;
 }
-
 function selectPostHS(id) {
   selections.post_hs = id;
   renderPostHSChoices();
@@ -1118,63 +1105,37 @@ function postHSBack() {
 function goToCareer() {
   const postHS = gameData.post_hs_choices.find(c => c.id === selections.post_hs);
   const baseAge = 18 + postHS.years;
-  
+
   updateDots('career-dots', 'career-progress-label', 1);
   document.getElementById('career-age-label').textContent = `Age ${baseAge}`;
   document.getElementById('career-eyebrow').textContent = `Chapter 2 · Age ${baseAge}`;
-  document.getElementById('career-title').textContent = postHS.has_college ? 
-    "The diploma's in hand. Now what?" : "It's time to level up.";
-  document.getElementById('career-story').textContent = postHS.has_college ?
-    `You've finished ${postHS.title.toLowerCase()}. Now the job market awaits. Your choices have given you certain options — but not all doors are open equally.` :
-    `You've been building skills and earning money. Now it's time to find your career path — the work that will define the next decade.`;
-  
-  // Filter career choices based on post-hs path
-  const availableCareers = gameData.career_choices.filter(c => 
-    !c.requires_college || postHS.has_college
-  );
-  
-  const container = document.getElementById('career-choices');
-  container.innerHTML = availableCareers.map(c => `
-    <div class="choice-card ${selections.career === c.id ? 'selected' : ''}" onclick="selectCareer('${c.id}')">
-      <div class="selected-mark">✓</div>
-      <span class="card-icon">${c.icon}</span>
-      <div class="card-name">${c.title}</div>
-      <div class="card-desc">${c.desc}</div>
-      <div class="tags">${(c.tags || []).map(([l, t]) => `<span class="tag tag-${t}">${l}</span>`).join('')}</div>
-    </div>
-  `).join('');
+  document.getElementById('career-title').textContent = postHS.has_college
+    ? "The diploma's in hand. Now what?" : "It's time to level up.";
+  document.getElementById('career-story').textContent = postHS.has_college
+    ? `You've finished ${postHS.title.toLowerCase()}. Now the job market awaits. Your choices have given you certain options — but not all doors are open equally.`
+    : `You've been building skills and earning money. Now it's time to find your career path — the work that will define the next decade.`;
+
+  const availableCareers = gameData.career_choices.filter(c => !c.requires_college || postHS.has_college);
+  renderChoiceGrid('career-choices', availableCareers, 'career', 'selectCareer');
   document.getElementById('career-next').disabled = !selections.career;
-  
   show('screen-career');
 }
 
 function selectCareer(id) {
   selections.career = id;
-  document.querySelectorAll('#career-choices .choice-card').forEach(c => c.classList.remove('selected'));
-  const card = document.querySelector(`#career-choices .choice-card[onclick*="${id}"]`);
-  if (card) card.classList.add('selected');
+  document.querySelectorAll('#career-choices .choice-card').forEach(c => {
+    c.classList.toggle('selected', c.dataset.choiceId === id);
+  });
   document.getElementById('career-next').disabled = false;
 }
 
 function goToHousing() {
   const postHS = gameData.post_hs_choices.find(c => c.id === selections.post_hs);
   const baseAge = 18 + postHS.years + 1;
-  
   updateDots('housing-dots', 'housing-progress-label', 2);
   document.getElementById('housing-age').textContent = baseAge;
-  
-  const container = document.getElementById('housing-choices');
-  container.innerHTML = gameData.housing_choices.map(c => `
-    <div class="choice-card ${selections.housing === c.id ? 'selected' : ''}" onclick="selectChoiceAndRender('housing', '${c.id}', 'housing-choices', 'housing-next')">
-      <div class="selected-mark">✓</div>
-      <span class="card-icon">${c.icon}</span>
-      <div class="card-name">${c.title}</div>
-      <div class="card-desc">${c.desc}</div>
-      <div class="tags">${(c.tags || []).map(([l, t]) => `<span class="tag tag-${t}">${l}</span>`).join('')}</div>
-    </div>
-  `).join('');
+  renderChoiceGrid('housing-choices', gameData.housing_choices, 'housing', 'selectHousing');
   document.getElementById('housing-next').disabled = !selections.housing;
-  
   show('screen-housing');
 }
 
@@ -1182,81 +1143,51 @@ function goToDebt() {
   const postHS = gameData.post_hs_choices.find(c => c.id === selections.post_hs);
   const baseAge = 18 + postHS.years + 2;
   const hasDebt = postHS.debt_base > 0;
-  
   updateDots('debt-dots', 'debt-progress-label', 3);
   document.getElementById('debt-age').textContent = baseAge;
-  document.getElementById('debt-title').textContent = hasDebt ? 
-    'The weight of the loans' : 'Building Your Financial Foundation';
-  document.getElementById('debt-story').textContent = hasDebt ?
-    `Your student loan grace period just ended. $${Math.round(postHS.debt_base/1000)}K is staring you down. How do you tackle it?` :
-    `You started without debt — a real advantage. Now it's about building financial habits that compound over the next decade.`;
-  
-  const container = document.getElementById('debt-choices');
-  container.innerHTML = gameData.debt_choices.map(c => `
-    <div class="choice-card ${selections.debt === c.id ? 'selected' : ''}" onclick="selectChoiceAndRender('debt', '${c.id}', 'debt-choices', 'debt-next')">
-      <div class="selected-mark">✓</div>
-      <span class="card-icon">${c.icon}</span>
-      <div class="card-name">${c.title}</div>
-      <div class="card-desc">${c.desc}</div>
-      <div class="tags">${(c.tags || []).map(([l, t]) => `<span class="tag tag-${t}">${l}</span>`).join('')}</div>
-    </div>
-  `).join('');
+  document.getElementById('debt-title').textContent = hasDebt ? 'The weight of the loans' : 'Building Your Financial Foundation';
+  document.getElementById('debt-story').textContent = hasDebt
+    ? `Your student loan grace period just ended. $${Math.round(postHS.debt_base/1000)}K is staring you down. How do you tackle it?`
+    : `You started without debt — a real advantage. Now it's about building financial habits that compound over the next decade.`;
+  renderChoiceGrid('debt-choices', gameData.debt_choices, 'debt', 'selectDebt');
   document.getElementById('debt-next').disabled = !selections.debt;
-  
   show('screen-debt');
 }
 
 function goToLifestyle() {
   const postHS = gameData.post_hs_choices.find(c => c.id === selections.post_hs);
   const baseAge = 18 + postHS.years + 4;
-  
   updateDots('lifestyle-dots', 'lifestyle-progress-label', 4);
   document.getElementById('lifestyle-age').textContent = baseAge;
-  
-  const container = document.getElementById('lifestyle-choices');
-  container.innerHTML = gameData.lifestyle_choices.map(c => `
-    <div class="choice-card ${selections.lifestyle === c.id ? 'selected' : ''}" onclick="selectChoiceAndRender('lifestyle', '${c.id}', 'lifestyle-choices', 'lifestyle-next')">
-      <div class="selected-mark">✓</div>
-      <span class="card-icon">${c.icon}</span>
-      <div class="card-name">${c.title}</div>
-      <div class="card-desc">${c.desc}</div>
-      <div class="tags">${(c.tags || []).map(([l, t]) => `<span class="tag tag-${t}">${l}</span>`).join('')}</div>
-    </div>
-  `).join('');
+  renderChoiceGrid('lifestyle-choices', gameData.lifestyle_choices, 'lifestyle', 'selectLifestyle');
   document.getElementById('lifestyle-next').disabled = !selections.lifestyle;
-  
   show('screen-lifestyle');
 }
 
 function goToEmergency() {
   updateDots('emergency-dots', 'emergency-progress-label', 5);
-  
-  const container = document.getElementById('emergency-choices');
-  container.innerHTML = gameData.emergency_choices.map(c => `
-    <div class="choice-card ${selections.emergency === c.id ? 'selected' : ''}" onclick="selectChoiceAndRender('emergency', '${c.id}', 'emergency-choices', 'emergency-next')">
-      <div class="selected-mark">✓</div>
-      <span class="card-icon">${c.icon}</span>
-      <div class="card-name">${c.title}</div>
-      <div class="card-desc">${c.desc}</div>
-      <div class="tags">${(c.tags || []).map(([l, t]) => `<span class="tag tag-${t}">${l}</span>`).join('')}</div>
-    </div>
-  `).join('');
+  renderChoiceGrid('emergency-choices', gameData.emergency_choices, 'emergency', 'selectEmergency');
   document.getElementById('emergency-next').disabled = !selections.emergency;
-  
   show('screen-emergency');
 }
 
 function selectChoiceAndRender(type, id, containerId, nextBtnId) {
   selections[type] = id;
-  document.querySelectorAll(`#${containerId} .choice-card`).forEach(c => c.classList.remove('selected'));
-  const cards = document.querySelectorAll(`#${containerId} .choice-card`);
-  cards.forEach(c => { if (c.getAttribute('onclick') && c.getAttribute('onclick').includes(id)) c.classList.add('selected'); });
+  document.querySelectorAll(`#${containerId} .choice-card`).forEach(c => {
+    c.classList.toggle('selected', c.dataset.choiceId === id);
+  });
   document.getElementById(nextBtnId).disabled = false;
 }
 
 function selectChoice(type, id, nextBtnId) {
   selectChoiceAndRender(type, id, type + '-choices', nextBtnId);
 }
+
+// Named global wrappers used as onclick strings in renderChoiceGrid
+function selectHousing(id)   { selectChoice('housing',   id, 'housing-next');   }
+function selectDebt(id)      { selectChoice('debt',      id, 'debt-next');      }
+function selectLifestyle(id) { selectChoice('lifestyle', id, 'lifestyle-next'); }
+function selectEmergency(id) { selectChoice('emergency', id, 'emergency-next'); }
 
 // ═══════════════════════════════════════════════════════
 // COMPUTE & SHOW RESULTS

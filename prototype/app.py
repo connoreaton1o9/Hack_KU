@@ -47,19 +47,19 @@ def add_high_score(name, score, net_worth, mode):
     return scores
 
 def call_gemini(prompt, max_tokens=2000):
-    """Call Gemini API with the given prompt."""
+    """Call Gemini API with a short timeout; returns None immediately on failure."""
     try:
         payload = {
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {"maxOutputTokens": max_tokens, "temperature": 0.9}
         }
-        resp = requests.post(GEMINI_URL, json=payload, timeout=30)
+        resp = requests.post(GEMINI_URL, json=payload, timeout=8)
         data = resp.json()
         if "candidates" in data and data["candidates"]:
             return data["candidates"][0]["content"]["parts"][0]["text"]
         return None
     except Exception as e:
-        print(f"Gemini error: {e}")
+        print(f"Gemini unavailable (using fallback): {type(e).__name__}")
         return None
 
 # ─── GAME DATA ─────────────────────────────────────────────────────────────────
@@ -546,6 +546,13 @@ Respond with ONLY a JSON object:
     }
 
 
+BACKSTORY_FALLBACKS = {
+    "working_class": "You grew up watching your parents stretch every dollar. You learned early that nothing comes free — you've been hustling since you were old enough to mow lawns. School was something you fit in between shifts. Now at 18, you're the first in your family who gets to choose what comes next.",
+    "middle_class": "You grew up in a comfortable house in a decent neighborhood — not rich, but never really worried about rent either. Your parents worked hard and expected you to do the same. You've had opportunities, and now it's on you to actually use them.",
+    "upper_middle": "Your parents are professionals who gave you every advantage — good schools, SAT prep, family vacations. You've never had to think much about money. That might be your biggest blind spot. Now the training wheels come off.",
+    "challenging": "Life has thrown everything at you and you're still standing. You've been working since 14, sometimes to help your family make rent. Hardship has made you scrappy in ways your peers can't understand. You're starting behind — but you're also starting hungry.",
+}
+
 def generate_character_backstory(name, hometown, background):
     """Generate a short personal backstory for emotional connection."""
     prompt = f"""Write a SHORT (3-4 sentences) personal backstory for {name} from {hometown} 
@@ -558,7 +565,10 @@ Keep it under 80 words. No lists. Just a short paragraph."""
     result = call_gemini(prompt, max_tokens=200)
     if result:
         return result.strip()
-    return f"You grew up in {hometown}, shaped by your {background['label'].lower()} upbringing. Every dollar you've earned has taught you something about the world. Now, at 18, the whole future is open."
+    fallback = BACKSTORY_FALLBACKS.get(background["id"], "")
+    if not fallback:
+        fallback = f"You grew up in {hometown}, shaped by your {background['label'].lower()} upbringing. Every dollar has taught you something. Now at 18, the whole future is open."
+    return fallback
 
 
 def get_fallback_scenarios(char_name):
