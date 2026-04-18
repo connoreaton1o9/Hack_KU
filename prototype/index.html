@@ -532,7 +532,7 @@ body::before {
 <div id="loading-overlay">
   <div class="loading-spinner"></div>
   <div class="loading-text" id="loading-message">Generating your story…</div>
-  <div class="loading-sub">Gemini AI is crafting your life scenarios</div>
+  <div class="loading-sub" id="loading-sub">Preparing your life simulation…</div>
 </div>
 
 <div id="toast" class="toast"></div>
@@ -545,12 +545,6 @@ body::before {
     <p class="masthead-label">An Interactive Life Simulation</p>
     <h1 class="masthead-title">Your story<br>starts now</h1>
     <p class="masthead-sub">Live year by year from 18 to retirement. Every choice has consequences — immediate and lasting. Can you build financial freedom?</p>
-    <div class="badge-strip">
-      <span class="badge">📍 Year-by-year play</span>
-      <span class="badge">🎲 Random events</span>
-      <span class="badge">🤖 AI storytelling</span>
-      <span class="badge">⚡ Beat Gemini mode</span>
-    </div>
     <p style="font-size:13px; color:var(--ink3); margin-bottom:1.5rem;">Choose your experience:</p>
     <div class="mode-grid">
       <div class="mode-card mode-standard" onclick="startStandard()">
@@ -601,8 +595,8 @@ body::before {
     <div class="length-card" id="len-long" onclick="selectLength('long')">
       <div class="length-icon">🏔️</div>
       <div class="length-name">Full Life</div>
-      <div class="length-years">35 Years</div>
-      <div class="length-desc">Ages 18–53. Career peaks, family, recessions, and real wealth-building.</div>
+      <div class="length-years">47 Years</div>
+      <div class="length-desc">Ages 18–65. Career peaks, family, recessions, and real wealth-building through retirement.</div>
     </div>
   </div>
 
@@ -727,7 +721,7 @@ body::before {
   <p class="section-title">Insights</p>
   <div class="insights-grid" id="insights-grid"></div>
   <div id="score-entry-wrap" class="score-entry" style="display:none;">
-    <label>📝 Enter your name for the leaderboard</label>
+    <label id="score-entry-label">📝 Enter your name for the leaderboard</label>
     <input type="text" id="score-name-input" placeholder="Your name…" maxlength="30">
     <button class="btn btn-gold" onclick="submitHighScore()">Save to Leaderboard</button>
     <span id="score-saved-msg" style="font-size:13px; color:var(--sage); margin-left:12px; display:none;">Saved! ✓</span>
@@ -803,7 +797,7 @@ let gs = {}; // game state — the heart of BitLife-style play
 const GAME_LENGTHS = {
   short:  { years: 10, label: '10 Years', endAge: 28 },
   medium: { years: 20, label: '20 Years', endAge: 38 },
-  long:   { years: 35, label: '35 Years', endAge: 53 }
+  long:   { years: 47, label: '47 Years', endAge: 65 }
 };
 
 // ── Annual event pool — context-aware ──────────────────────────
@@ -820,11 +814,11 @@ const EVENT_POOL = [
       { id: 'accept', title: 'Accept the Promotion', desc: 'More responsibility, more pay.', riskLevel: 'low', consequenceText: '+$8–14K salary, +stress', apply: gs => {
         const raise = 8000 + Math.random() * 6000;
         gs.salary += raise; gs.job_level = Math.min(5, gs.job_level + 1); gs.stress = Math.min(100, gs.stress + 10);
-        return { log: `Got promoted! Salary +$${fmt(raise)}/yr`, statChanges: [{label: `+$${fmt(raise)}/yr`, type:'pos'}, {label:'+Stress', type:'neg'}], quality: 'good' };
+        return { log: `Got promoted! Salary +${fmt(raise)}/yr`, statChanges: [{label: `+${fmt(raise)}/yr`, type:'pos'}, {label:'+Stress', type:'neg'}], quality: 'good' };
       }},
       { id: 'negotiate', title: 'Negotiate Hard', desc: 'Push for 20% more. They might say no.', riskLevel: 'med', consequenceText: 'High risk/reward', apply: gs => {
         const win = Math.random() > 0.4;
-        if (win) { const raise = 14000 + Math.random() * 8000; gs.salary += raise; gs.job_level = Math.min(5, gs.job_level + 1); return { log: `Negotiated successfully! Salary +$${fmt(raise)}/yr`, statChanges: [{label:`+$${fmt(raise)}/yr`, type:'pos'}], quality:'great' }; }
+        if (win) { const raise = 14000 + Math.random() * 8000; gs.salary += raise; gs.job_level = Math.min(5, gs.job_level + 1); return { log: `Negotiated successfully! Salary +${fmt(raise)}/yr`, statChanges: [{label:`+${fmt(raise)}/yr`, type:'pos'}], quality:'great' }; }
         else { gs.stress += 8; return { log: 'Negotiation fell through. Kept current role.', statChanges: [{label:'+Stress', type:'neg'}], quality:'neutral' }; }
       }},
       { id: 'decline', title: 'Decline — Keep Balance', desc: 'Stay comfortable, protect your time.', riskLevel: 'low', consequenceText: 'No pay increase, less stress', apply: gs => {
@@ -836,7 +830,7 @@ const EVENT_POOL = [
 
   { id: 'layoff', emoji: '📦', category: 'crisis', title: 'Layoff Wave',
     conditions: gs => gs.age >= 23 && !gs.unemployed,
-    story: gs => `The company announces a 15% headcount reduction. You get the call on a Tuesday. Your job is gone. The severance is 8 weeks of pay — about $${fmt(gs.salary / 6.5)}.`,
+    story: gs => `The company announces a 15% headcount reduction. You get the call on a Tuesday. Your job is gone. The severance is 8 weeks of pay — about ${fmt(gs.salary / 6.5)}.`,
     choices: [
       { id: 'job_hunt', title: 'Aggressively Job Hunt', desc: 'Full-time search. Back to work in 2–4 months.', riskLevel: 'med', consequenceText: 'Back employed in ~3 months', apply: gs => {
         const months = 2 + Math.floor(Math.random() * 3);
@@ -846,7 +840,7 @@ const EVENT_POOL = [
         gs.savings = Math.max(0, gs.savings + severance);
         gs.salary = salaryNew;
         gs.stress += 20;
-        return { log: `Found new job in ${months} months. New salary: $${fmt(salaryNew)}/yr`, statChanges: [{label:'-$'+fmt(months*(gs.monthly_expenses||3000)), type:'neg'}, {label:'Reemployed', type:'pos'}], quality: 'neutral' };
+        return { log: `Found new job in ${months} months. New salary: ${fmt(salaryNew)}/yr`, statChanges: [{label:'-$'+fmt(months*(gs.monthly_expenses||3000)), type:'neg'}, {label:'Reemployed', type:'pos'}], quality: 'neutral' };
       }},
       { id: 'freelance', title: 'Go Freelance', desc: 'Use skills independently. High variance income for 6–12 months.', riskLevel: 'high', consequenceText: 'Variable: could gain or lose big', apply: gs => {
         const success = Math.random();
@@ -867,7 +861,7 @@ const EVENT_POOL = [
       { id: 'launch', title: 'Launch the Side Hustle', desc: 'Commit 12hrs/week. $400–1,500/mo potential.', riskLevel: 'med', consequenceText: 'Extra income, costs time & energy', apply: gs => {
         const income = 400 + Math.floor(Math.random() * 1100);
         gs.side_income = income * 12; gs.has_side_hustle = true; gs.stress += 10; gs.happiness += 5;
-        return { log: `Side hustle generating $${income}/mo extra!`, statChanges: [{label:`+$${income}/mo`, type:'pos'},{label:'+Stress', type:'neg'}], quality:'good' };
+        return { log: `Side hustle generating ${income}/mo extra!`, statChanges: [{label:`+${income}/mo`, type:'pos'},{label:'+Stress', type:'neg'}], quality:'good' };
       }},
       { id: 'skip', title: 'Pass — Focus on Main Job', desc: 'Protect your bandwidth for career growth.', riskLevel: 'low', consequenceText: 'No extra income, more rest', apply: gs => {
         gs.happiness += 3;
@@ -879,7 +873,7 @@ const EVENT_POOL = [
   // ── FINANCIAL ──
   { id: 'stock_market_crash', emoji: '📉', category: 'market', title: 'Market Crash',
     conditions: gs => gs.investments > 5000,
-    story: gs => `The market drops 30% in three months. Your investment portfolio takes a serious hit. Friends are panicking and selling. You're staring at a $${fmt(gs.investments * 0.3)} paper loss.`,
+    story: gs => `The market drops 30% in three months. Your investment portfolio takes a serious hit. Friends are panicking and selling. You're staring at a ${fmt(gs.investments * 0.3)} paper loss.`,
     choices: [
       { id: 'hold', title: 'Hold — Stay the Course', desc: 'Time in market beats timing the market.', riskLevel: 'low', consequenceText: 'Short-term pain, long-term gain', apply: gs => {
         gs.investments *= 0.85; // 15% net loss (market partially recovers)
@@ -895,60 +889,60 @@ const EVENT_POOL = [
       { id: 'panic_sell', title: 'Panic Sell Everything', desc: "Can't watch it fall further. Lock in losses.", riskLevel: 'high', consequenceText: 'Lock in 30% loss, miss recovery', apply: gs => {
         const loss = gs.investments * 0.3;
         gs.savings += gs.investments * 0.7; gs.investments = 0; gs.stress += 15;
-        return { log: `Panic sold. Lost $${fmt(loss)} and missed the recovery.`, statChanges: [{label:`-$${fmt(loss)} locked in`, type:'neg'},{label:'Missed recovery', type:'neg'}], quality:'bad' };
+        return { log: `Panic sold. Lost ${fmt(loss)} and missed the recovery.`, statChanges: [{label:`-${fmt(loss)} locked in`, type:'neg'},{label:'Missed recovery', type:'neg'}], quality:'bad' };
       }}
     ]
   },
 
   { id: 'investment_opportunity', emoji: '💰', category: 'opportunity', title: 'Investment Opportunity',
     conditions: gs => gs.savings > 8000,
-    story: gs => `A trusted friend approaches you with an investment opportunity: a local real estate deal they're putting together, or you could max out your Roth IRA, or put it in an index fund. You have $${fmt(Math.min(gs.savings * 0.4, 15000))} to play with.`,
+    story: gs => `A trusted friend approaches you with an investment opportunity: a local real estate deal they're putting together, or you could max out your Roth IRA, or put it in an index fund. You have ${fmt(Math.min(gs.savings * 0.4, 15000))} to play with.`,
     choices: [
       { id: 'roth', title: 'Max Out Roth IRA', desc: 'Tax-free growth. Safe, smart.', riskLevel: 'low', consequenceText: '$7K invested tax-advantaged', apply: gs => {
         const amt = Math.min(7000, gs.savings); gs.savings -= amt; gs.investments += amt * 1.08;
-        return { log: `Maxed Roth IRA with $${fmt(amt)}. Tax-free compounding.`, statChanges: [{label:`+$${fmt(amt)} invested`, type:'pos'},{label:'Tax-free', type:'pos'}], quality:'good' };
+        return { log: `Maxed Roth IRA with ${fmt(amt)}. Tax-free compounding.`, statChanges: [{label:`+${fmt(amt)} invested`, type:'pos'},{label:'Tax-free', type:'pos'}], quality:'good' };
       }},
       { id: 'real_estate', title: 'Join the Real Estate Deal', desc: 'Higher risk/reward. Could 2x or lose 40%.', riskLevel: 'high', consequenceText: 'Potential big win or loss', apply: gs => {
         const invest = Math.min(gs.savings * 0.4, 15000); gs.savings -= invest;
         const outcome = Math.random();
-        if (outcome > 0.6) { const gain = invest * 1.8; gs.investments += gain; return { log: `Real estate deal paid off 80%! +$${fmt(gain)}`, statChanges: [{label:`+$${fmt(gain)}`, type:'pos'}], quality:'great' }; }
+        if (outcome > 0.6) { const gain = invest * 1.8; gs.investments += gain; return { log: `Real estate deal paid off 80%! +${fmt(gain)}`, statChanges: [{label:`+${fmt(gain)}`, type:'pos'}], quality:'great' }; }
         else if (outcome > 0.25) { gs.investments += invest; return { log: 'Deal returned roughly what you put in.', statChanges: [{label:'Broke even', type:'neutral'}], quality:'neutral' }; }
-        else { const loss = invest * 0.55; gs.stress += 20; return { log: `Deal went bad. Lost $${fmt(loss)}.`, statChanges: [{label:`-$${fmt(loss)}`, type:'neg'}], quality:'bad' }; }
+        else { const loss = invest * 0.55; gs.stress += 20; return { log: `Deal went bad. Lost ${fmt(loss)}.`, statChanges: [{label:`-${fmt(loss)}`, type:'neg'}], quality:'bad' }; }
       }},
       { id: 'index_fund', title: 'Put It in Index Funds', desc: 'Boring, steady, historically excellent.', riskLevel: 'low', consequenceText: 'Steady 7–10% average return', apply: gs => {
         const amt = Math.min(gs.savings * 0.35, 12000); gs.savings -= amt; gs.investments += amt;
-        return { log: `Invested $${fmt(amt)} in index funds. Boring wins.`, statChanges: [{label:`+$${fmt(amt)} invested`, type:'pos'}], quality:'good' };
+        return { log: `Invested ${fmt(amt)} in index funds. Boring wins.`, statChanges: [{label:`+${fmt(amt)} invested`, type:'pos'}], quality:'good' };
       }}
     ]
   },
 
   { id: 'unexpected_windfall', emoji: '🎰', category: 'opportunity', title: 'Unexpected Windfall',
     conditions: gs => gs.age >= 22,
-    story: gs => `Out of nowhere, money arrives: a small inheritance from a relative you barely knew, a tax refund larger than expected, or a class action settlement. $${fmt(3000 + Math.floor(Math.random() * 9000))} lands in your account.`,
+    story: gs => `Out of nowhere, money arrives: a small inheritance from a relative you barely knew, a tax refund larger than expected, or a class action settlement. ${fmt(3000 + Math.floor(Math.random() * 9000))} lands in your account.`,
     choices: [
       { id: 'invest_all', title: 'Invest All of It', desc: 'Put every dollar to work immediately.', riskLevel: 'low', consequenceText: '+Investments', apply: gs => {
         const amt = 3000 + Math.floor(Math.random() * 9000); gs.investments += amt;
-        return { log: `Invested windfall of $${fmt(amt)}.`, statChanges: [{label:`+$${fmt(amt)} invested`, type:'pos'}], quality:'good' };
+        return { log: `Invested windfall of ${fmt(amt)}.`, statChanges: [{label:`+${fmt(amt)} invested`, type:'pos'}], quality:'good' };
       }},
       { id: 'split', title: 'Half Save, Half Spend', desc: 'Enjoy some, keep some. Balance.', riskLevel: 'low', consequenceText: '+Investments, +Happiness', apply: gs => {
         const total = 3000 + Math.floor(Math.random() * 9000); gs.investments += total * 0.5; gs.happiness = Math.min(100, gs.happiness + 12);
-        return { log: `Split $${fmt(total)} windfall: half invested, half enjoyed.`, statChanges: [{label:`+$${fmt(total*0.5)} invested`, type:'pos'},{label:'+Happiness', type:'pos'}], quality:'good' };
+        return { log: `Split ${fmt(total)} windfall: half invested, half enjoyed.`, statChanges: [{label:`+${fmt(total*0.5)} invested`, type:'pos'},{label:'+Happiness', type:'pos'}], quality:'good' };
       }},
       { id: 'debt', title: 'Pay Off Debt', desc: 'Put it toward loans or credit cards.', riskLevel: 'low', consequenceText: '-Debt, +Monthly cash flow', apply: gs => {
         const amt = 3000 + Math.floor(Math.random() * 9000); const paid = Math.min(amt, gs.debt); gs.debt = Math.max(0, gs.debt - paid);
-        return { log: `Applied $${fmt(paid)} to debt. Balance reduced.`, statChanges: [{label:`-$${fmt(paid)} debt`, type:'pos'}], quality:'good' };
+        return { log: `Applied ${fmt(paid)} to debt. Balance reduced.`, statChanges: [{label:`-${fmt(paid)} debt`, type:'pos'}], quality:'good' };
       }}
     ]
   },
 
   // ── LIFE EVENTS ──
   { id: 'medical_emergency', emoji: '🏥', category: 'health', title: 'Medical Emergency',
-    story: gs => `A sudden medical issue lands you in the ER — appendix, accident, or something else the doctors want to "monitor." The bill arrives: $${fmt(4000 + Math.floor(Math.random() * 8000))} after insurance (or $${fmt(12000 + Math.floor(Math.random() * 8000))} without).`,
+    story: gs => `A sudden medical issue lands you in the ER — appendix, accident, or something else the doctors want to "monitor." The bill arrives: ${fmt(4000 + Math.floor(Math.random() * 8000))} after insurance (or ${fmt(12000 + Math.floor(Math.random() * 8000))} without).`,
     choices: [
       { id: 'savings', title: 'Pay from Emergency Fund', desc: 'This is what the fund is for.', riskLevel: 'low', consequenceText: '-Emergency fund, -Health', apply: gs => {
         const bill = gs.has_insurance ? 4000 + Math.floor(Math.random()*8000) : 12000 + Math.floor(Math.random()*8000);
         gs.savings = Math.max(0, gs.savings - bill); gs.health = Math.max(0, gs.health - 10);
-        return { log: `Paid $${fmt(bill)} medical bill from savings.`, statChanges: [{label:`-$${fmt(bill)}`, type:'neg'},{label:'-Health', type:'neg'}], quality:'bad' };
+        return { log: `Paid ${fmt(bill)} medical bill from savings.`, statChanges: [{label:`-${fmt(bill)}`, type:'neg'},{label:'-Health', type:'neg'}], quality:'bad' };
       }},
       { id: 'payment_plan', title: 'Set Up Payment Plan', desc: '$300/mo over 18 months.', riskLevel: 'med', consequenceText: '-$300/mo for 18 months', apply: gs => {
         gs.monthly_expenses = (gs.monthly_expenses || 3000) + 300; gs.health = Math.max(0, gs.health - 10);
@@ -959,7 +953,7 @@ const EVENT_POOL = [
         const origBill = gs.has_insurance ? 4000 + Math.floor(Math.random()*8000) : 12000 + Math.floor(Math.random()*8000);
         const reduced = Math.floor(origBill * (0.4 + Math.random() * 0.3));
         gs.savings = Math.max(0, gs.savings - reduced);
-        return { log: `Negotiated bill from $${fmt(origBill)} down to $${fmt(reduced)}.`, statChanges: [{label:`-$${fmt(reduced)}`, type:'neg'},{label:'Smart move', type:'pos'}], quality:'neutral' };
+        return { log: `Negotiated bill from ${fmt(origBill)} down to ${fmt(reduced)}.`, statChanges: [{label:`-${fmt(reduced)}`, type:'neg'},{label:'Smart move', type:'pos'}], quality:'neutral' };
       }}
     ]
   },
@@ -985,11 +979,11 @@ const EVENT_POOL = [
 
   { id: 'rent_hike', emoji: '🏠', category: 'crisis', title: 'Rent Increase',
     conditions: gs => gs.housing_type === 'rent',
-    story: gs => `Your landlord sends the renewal letter. Rent is going up $${350 + Math.floor(Math.random() * 300)}/month. "Market rate adjustments." You have 60 days to decide: pay up, find something new, or consider buying.`,
+    story: gs => `Your landlord sends the renewal letter. Rent is going up ${350 + Math.floor(Math.random() * 300)}/month. "Market rate adjustments." You have 60 days to decide: pay up, find something new, or consider buying.`,
     choices: [
       { id: 'accept', title: 'Accept the Increase', desc: 'Stay put. Pay more. Avoid moving stress.', riskLevel: 'low', consequenceText: '+$350–650/mo expenses', apply: gs => {
         const hike = 350 + Math.floor(Math.random() * 300); gs.monthly_expenses += hike; gs.rent = (gs.rent || 1500) + hike;
-        return { log: `Accepted rent increase of $${hike}/mo.`, statChanges: [{label:`+$${hike}/mo`, type:'neg'}], quality:'bad' };
+        return { log: `Accepted rent increase of ${hike}/mo.`, statChanges: [{label:`+${hike}/mo`, type:'neg'}], quality:'bad' };
       }},
       { id: 'move_cheaper', title: 'Find a Cheaper Place', desc: 'Move further out. Save $300/mo, long commute.', riskLevel: 'low', consequenceText: '-$300/mo but moving costs $1,200', apply: gs => {
         gs.savings -= 1200; gs.monthly_expenses -= 300; gs.rent = (gs.rent||1500) - 300;
@@ -1061,19 +1055,19 @@ const EVENT_POOL = [
 
   { id: 'inheritance', emoji: '📜', category: 'opportunity', title: 'Unexpected Inheritance',
     conditions: gs => gs.age >= 28,
-    story: gs => `A distant relative has passed. You weren't close, but you receive a letter from an estate attorney. There's $${fmt(18000 + Math.floor(Math.random() * 22000))} coming your way. What do you do with it?`,
+    story: gs => `A distant relative has passed. You weren't close, but you receive a letter from an estate attorney. There's ${fmt(18000 + Math.floor(Math.random() * 22000))} coming your way. What do you do with it?`,
     choices: [
       { id: 'invest', title: 'Invest the Full Amount', desc: 'Let compound interest do its work.', riskLevel: 'low', consequenceText: '+Investments', apply: gs => {
         const amt = 18000 + Math.floor(Math.random() * 22000); gs.investments += amt;
-        return { log: `Invested entire $${fmt(amt)} inheritance.`, statChanges: [{label:`+$${fmt(amt)} invested`, type:'pos'}], quality:'great' };
+        return { log: `Invested entire ${fmt(amt)} inheritance.`, statChanges: [{label:`+${fmt(amt)} invested`, type:'pos'}], quality:'great' };
       }},
       { id: 'pay_debt', title: 'Wipe Out Debt First', desc: 'Eliminate what you owe, then start building.', riskLevel: 'low', consequenceText: '-Debt, +Monthly cash flow', apply: gs => {
         const amt = 18000 + Math.floor(Math.random() * 22000); const paid = Math.min(amt, gs.debt); gs.debt = Math.max(0, gs.debt - paid); const rest = amt - paid; if (rest > 0) gs.investments += rest;
-        return { log: `Used inheritance to wipe $${fmt(paid)} of debt.`, statChanges: [{label:`-$${fmt(paid)} debt`, type:'pos'}], quality:'great' };
+        return { log: `Used inheritance to wipe ${fmt(paid)} of debt.`, statChanges: [{label:`-${fmt(paid)} debt`, type:'pos'}], quality:'great' };
       }},
       { id: 'down_payment', title: 'Put It Toward a House', desc: 'Add to down payment fund.', riskLevel: 'low', consequenceText: '+Savings toward home', apply: gs => {
         const amt = 18000 + Math.floor(Math.random() * 22000); gs.savings += amt;
-        return { log: `$${fmt(amt)} added to house fund.`, statChanges: [{label:`+$${fmt(amt)} savings`, type:'pos'}], quality:'good' };
+        return { log: `${fmt(amt)} added to house fund.`, statChanges: [{label:`+${fmt(amt)} savings`, type:'pos'}], quality:'good' };
       }}
     ]
   },
@@ -1100,11 +1094,11 @@ const EVENT_POOL = [
 
   { id: 'job_offer', emoji: '✉️', category: 'career', title: 'Competing Job Offer',
     conditions: gs => gs.age >= 23 && gs.job_level >= 2,
-    story: gs => `A recruiter slides into your inbox. Company X wants to hire you — $${fmt(gs.salary * 1.22)}/yr, signing bonus of $10K, and fully remote. Your current employer is good. This would mean starting over in a new culture.`,
+    story: gs => `A recruiter slides into your inbox. Company X wants to hire you — ${fmt(gs.salary * 1.22)}/yr, signing bonus of $10K, and fully remote. Your current employer is good. This would mean starting over in a new culture.`,
     choices: [
       { id: 'accept', title: 'Take the New Job', desc: '22% raise + $10K signing bonus.', riskLevel: 'med', consequenceText: '+22% salary, new start', apply: gs => {
         const oldSalary = gs.salary; gs.salary = gs.salary * 1.22; gs.savings += 10000; gs.stress += 8;
-        return { log: `Took new job! Salary went from $${fmt(oldSalary)} to $${fmt(gs.salary)}/yr.`, statChanges: [{label:'+22% salary', type:'pos'},{label:'+$10K bonus', type:'pos'}], quality:'great' };
+        return { log: `Took new job! Salary went from ${fmt(oldSalary)} to ${fmt(gs.salary)}/yr.`, statChanges: [{label:'+22% salary', type:'pos'},{label:'+$10K bonus', type:'pos'}], quality:'great' };
       }},
       { id: 'counteroffer', title: 'Use It as Leverage', desc: 'Show current boss. Get a counteroffer.', riskLevel: 'high', consequenceText: 'Risk: boss says no or get let go', apply: gs => {
         const win = Math.random() > 0.45;
@@ -1129,7 +1123,7 @@ const EVENT_POOL = [
       }},
       { id: 'resist', title: 'Hold the Line on Spending', desc: 'Keep lifestyle flat. Let gap widen.', riskLevel: 'low', consequenceText: '+Savings rate, -Social FOMO', apply: gs => {
         const extraSaved = 600 * 12 * 0.7; gs.investments += extraSaved; gs.happiness = Math.max(0, gs.happiness - 5);
-        return { log: `Resisted lifestyle creep. $${fmt(extraSaved)} extra invested this year.`, statChanges: [{label:`+$${fmt(extraSaved)} invested`, type:'pos'},{label:'Some FOMO', type:'neg'}], quality:'good' };
+        return { log: `Resisted lifestyle creep. ${fmt(extraSaved)} extra invested this year.`, statChanges: [{label:`+${fmt(extraSaved)} invested`, type:'pos'},{label:'Some FOMO', type:'neg'}], quality:'good' };
       }},
       { id: 'automate', title: 'Automate Savings First', desc: 'Raise your 401k %, then spend what\'s left.', riskLevel: 'low', consequenceText: '+Savings rate, balanced life', apply: gs => {
         gs.investments += 400 * 12; gs.monthly_expenses += 200;
@@ -1165,7 +1159,7 @@ const EVENT_POOL = [
     choices: [
       { id: 'sabbatical', title: 'Take a 3-Month Sabbatical', desc: 'Rest. Recover. Cost: 3 months salary.', riskLevel: 'med', consequenceText: '-$14K savings, -Stress, +Health', apply: gs => {
         const cost = gs.salary / 4; gs.savings -= cost; gs.savings = Math.max(0, gs.savings); gs.stress = Math.max(0, gs.stress - 35); gs.health = Math.min(100, gs.health + 25);
-        return { log: `Took sabbatical. Cost $${fmt(cost)} but health restored.`, statChanges: [{label:`-$${fmt(cost)}`, type:'neg'},{label:'-Stress', type:'pos'},{label:'+Health', type:'pos'}], quality:'good' };
+        return { log: `Took sabbatical. Cost ${fmt(cost)} but health restored.`, statChanges: [{label:`-${fmt(cost)}`, type:'neg'},{label:'-Stress', type:'pos'},{label:'+Health', type:'pos'}], quality:'good' };
       }},
       { id: 'therapy', title: 'Start Therapy + Exercise', desc: '$200/mo, but sustainable long-term.', riskLevel: 'low', consequenceText: '-$200/mo, -Stress, -Burnout risk', apply: gs => {
         gs.monthly_expenses += 200; gs.stress = Math.max(0, gs.stress - 15); gs.health = Math.min(100, gs.health + 15);
@@ -1182,7 +1176,7 @@ const EVENT_POOL = [
 
   { id: 'early_retirement_window', emoji: '🌅', category: 'opportunity', title: 'FIRE Number in Sight',
     conditions: gs => gs.age >= 38 && gs.investments > 500000,
-    story: gs => `You do the math one evening. At 4% withdrawal rate, your $${fmt(gs.investments)} portfolio could generate $${fmt(gs.investments * 0.04)}/yr — potentially forever. Early retirement is actually visible. What do you do with that realization?`,
+    story: gs => `You do the math one evening. At 4% withdrawal rate, your ${fmt(gs.investments)} portfolio could generate ${fmt(gs.investments * 0.04)}/yr — potentially forever. Early retirement is actually visible. What do you do with that realization?`,
     choices: [
       { id: 'accelerate', title: 'Aggressively Sprint to FIRE', desc: 'Max everything out for 3 more years.', riskLevel: 'low', consequenceText: '+Savings sprint, -Fun for 3 years', apply: gs => {
         gs.investments += gs.salary * 0.5; gs.happiness -= 10; gs.savings += gs.salary * 0.1;
@@ -1199,6 +1193,123 @@ const EVENT_POOL = [
     ]
   },
 ];
+
+// ── Additional realistic hardship + retirement events ──────────
+EVENT_POOL.push(
+  { id: 'identity_theft', emoji: '🔓', category: 'crisis', title: 'Identity Theft',
+    conditions: gs => gs.age >= 25,
+    story: () => `Your credit card company calls at 7am. Someone ran up $6,200 on your card — flights, electronics, cash advances. The fraud team is helpful but it takes 3 months to resolve, and your credit score takes a temporary hit.`,
+    choices: [
+      { id: 'fight', title: 'Fight It — File All Reports', desc: 'Police report, credit bureaus, dispute everything.', riskLevel: 'low', consequenceText: '-$400 in fees, credit recovered', apply: gs => {
+        gs.savings -= 400; gs.savings = Math.max(0, gs.savings); gs.stress += 15;
+        return { log: 'Identity theft resolved after 3 months. $400 in fees.', statChanges: [{label:'-$400', type:'neg'},{label:'+Stress', type:'neg'},{label:'Credit protected', type:'pos'}], quality:'neutral' };
+      }},
+      { id: 'accept_loss', title: 'Accept Partial Loss ($1,800)', desc: 'Bank covers most. Move on.', riskLevel: 'low', consequenceText: '-$1,800 out of pocket', apply: gs => {
+        gs.savings -= 1800; gs.savings = Math.max(0, gs.savings); gs.stress += 8;
+        return { log: 'Accepted $1,800 loss after partial reimbursement.', statChanges: [{label:'-$1,800', type:'neg'}], quality:'bad' };
+      }}
+    ]
+  },
+
+  { id: 'tax_bill_surprise', emoji: '📋', category: 'crisis', title: 'Surprise Tax Bill',
+    conditions: gs => gs.side_income > 0 || gs.has_side_hustle,
+    story: gs => `A letter arrives from the IRS. Freelance and side income is subject to self-employment tax (15.3%) on top of income tax, and you didn't withhold enough. You owe ${fmt(gs.side_income * 0.22)} in back taxes plus $400 in penalties.`,
+    choices: [
+      { id: 'pay', title: 'Pay the Full Bill', desc: 'Settle it now, avoid interest accrual.', riskLevel: 'low', consequenceText: '-Tax owed, clean slate', apply: gs => {
+        const bill = Math.round(gs.side_income * 0.22) + 400;
+        gs.savings -= bill; gs.savings = Math.max(0, gs.savings); if (gs.savings === 0) gs.debt += bill;
+        return { log: `Paid ${fmt(bill)} in taxes and penalties.`, statChanges: [{label:`-${fmt(bill)}`, type:'neg'},{label:'No interest', type:'pos'}], quality:'neutral' };
+      }},
+      { id: 'payment_plan', title: 'IRS Payment Plan', desc: '$200/mo for 18 months + interest.', riskLevel: 'low', consequenceText: '-$200/mo for 18 months, +interest', apply: gs => {
+        const bill = Math.round(gs.side_income * 0.22) + 400;
+        gs.monthly_expenses += 200; gs.debt += bill * 1.08;
+        return { log: `Set up IRS payment plan. $200/mo for 18 months, plus 8% interest.`, statChanges: [{label:'+$200/mo', type:'neg'},{label:'+Interest cost', type:'neg'}], quality:'bad' };
+      }}
+    ]
+  },
+
+  { id: 'divorce', emoji: '💔', category: 'social', title: 'Divorce',
+    conditions: gs => gs.married && gs.age >= 28,
+    story: () => `It wasn't working. Constant fights about money and priorities. Divorce is the right call, but it's brutally expensive — legal fees, splitting assets, new deposits, relocating. Average divorce costs $12,000–$20,000 per person.`,
+    choices: [
+      { id: 'mediation', title: 'Mediation ($5K)', desc: 'Settle amicably. Faster, cheaper.', riskLevel: 'low', consequenceText: '-$5K, +$600/mo solo living costs', apply: gs => {
+        gs.savings -= 5000; gs.savings = Math.max(0, gs.savings); gs.married = false; gs.partner = false; gs.happiness = Math.max(0, gs.happiness - 20); gs.monthly_expenses += 600;
+        return { log: 'Mediated divorce. $5K in legal fees, clean resolution.', statChanges: [{label:'-$5K', type:'neg'},{label:'+$600/mo costs', type:'neg'},{label:'Moving forward', type:'pos'}], quality:'bad' };
+      }},
+      { id: 'contested', title: 'Contested Divorce ($18K+)', desc: 'Fight for assets. High cost, uncertain outcome.', riskLevel: 'high', consequenceText: '-$18K+ legal fees, possible recovery', apply: gs => {
+        gs.savings -= 18000; gs.savings = Math.max(0, gs.savings); gs.married = false; gs.partner = false; gs.happiness = Math.max(0, gs.happiness - 30); gs.stress += 30; gs.monthly_expenses += 600;
+        const win = Math.random() > 0.5;
+        if (win) { gs.savings += 10000; return { log: 'Won contested divorce. Recovered $10K assets, paid $18K legal fees.', statChanges: [{label:'-$8K net', type:'neg'},{label:'+Stress', type:'neg'}], quality:'bad' }; }
+        return { log: 'Lost contested divorce. $18K in fees, nothing recovered.', statChanges: [{label:'-$18K', type:'neg'},{label:'+Stress', type:'neg'}], quality:'bad' };
+      }}
+    ]
+  },
+
+  { id: 'job_rejection_streak', emoji: '😔', category: 'career', title: 'Six Months of Rejections',
+    conditions: gs => gs.age >= 23 && gs.age <= 38,
+    story: () => `You've been trying to level up — applications, interviews, ghosting. Six months of effort. Your current job is fine but the market is brutal and your confidence is taking hits.`,
+    choices: [
+      { id: 'keep_trying', title: 'Keep Grinding', desc: 'Eventually it pays off. Maybe.', riskLevel: 'med', consequenceText: 'Random: breakthrough or plateau', apply: gs => {
+        const breakthrough = Math.random() > 0.5;
+        if (breakthrough) { gs.salary *= 1.18; gs.happiness += 10; return { log: 'Persistence paid off. New role, 18% raise.', statChanges: [{label:'+18% salary', type:'pos'}], quality:'great' }; }
+        gs.happiness -= 12; gs.stress += 10;
+        return { log: 'No breakthrough. Confidence dented. Salary unchanged.', statChanges: [{label:'-Happiness', type:'neg'},{label:'+Stress', type:'neg'}], quality:'bad' };
+      }},
+      { id: 'upskill', title: 'Invest in Skills ($2,500)', desc: 'Address gaps directly.', riskLevel: 'low', consequenceText: '-$2,500, +salary ceiling long-term', apply: gs => {
+        gs.savings -= 2500; gs.savings = Math.max(0, gs.savings); gs.salary *= 1.08;
+        return { log: 'Invested $2,500 in skills. Landed better role with 8% raise.', statChanges: [{label:'-$2,500', type:'neg'},{label:'+8% salary', type:'pos'}], quality:'good' };
+      }},
+      { id: 'accept_current', title: 'Accept Current Role', desc: 'Focus on doing excellent work here.', riskLevel: 'low', consequenceText: 'Stability, -ambition for now', apply: gs => {
+        gs.happiness -= 5; gs.stress = Math.max(0, gs.stress - 8);
+        return { log: 'Made peace with current role. Less stress, but opportunity cost remains.', statChanges: [{label:'-Ambition', type:'neutral'},{label:'-Stress', type:'pos'}], quality:'neutral' };
+      }}
+    ]
+  },
+
+  // Retirement events for Full Life mode
+  { id: 'social_security', emoji: '🏛️', category: 'opportunity', title: 'Social Security Decision',
+    conditions: gs => gs.age >= 62 && gs.age <= 65,
+    story: () => `You're approaching Social Security eligibility. Claim at 62 for $1,800/mo, wait until 67 for $2,400/mo, or delay to 70 for $3,000/mo. The break-even for waiting is around age 78. Your health, other income, and longevity all factor in.`,
+    choices: [
+      { id: 'claim_early', title: 'Claim at 62 — Start Now', desc: '$1,800/mo immediately. Lower total if you live long.', riskLevel: 'low', consequenceText: '+$1,800/mo now', apply: gs => {
+        gs.side_income = (gs.side_income || 0) + 21600;
+        return { log: 'Claiming SS early. $1,800/mo income stream started.', statChanges: [{label:'+$1,800/mo', type:'pos'},{label:'Lower lifetime SS', type:'neg'}], quality:'neutral' };
+      }},
+      { id: 'wait_67', title: 'Wait Until 67 — Full Benefits', desc: '$2,400/mo. Better if you\'re healthy.', riskLevel: 'low', consequenceText: '+$2,400/mo at 67', apply: gs => {
+        gs.side_income = (gs.side_income || 0) + 28800;
+        return { log: 'Waiting for full SS at 67. Better lifetime math.', statChanges: [{label:'+$2,400/mo at 67', type:'pos'}], quality:'good' };
+      }},
+      { id: 'delay_70', title: 'Delay to 70 — Maximum Benefit', desc: '$3,000/mo. Best if healthy and still working.', riskLevel: 'low', consequenceText: '+$3,000/mo at 70, maximum lifetime value', apply: gs => {
+        gs.side_income = (gs.side_income || 0) + 36000;
+        return { log: 'Delaying SS to 70 for maximum $3,000/mo benefit.', statChanges: [{label:'+$3,000/mo at 70', type:'pos'}], quality:'great' };
+      }}
+    ]
+  },
+
+  { id: 'long_term_care', emoji: '🏠', category: 'health', title: 'Long-Term Care Decision',
+    conditions: gs => gs.age >= 58 && gs.age <= 63,
+    story: () => `A financial planner raises the issue: 1-in-2 people over 65 need long-term care. Average cost: $108,000/yr. Medicare doesn't cover it. You can buy insurance now at $2,800/yr, keep a $300K self-insurance reserve, or skip it and hope for the best.`,
+    choices: [
+      { id: 'buy_insurance', title: 'Buy LTC Insurance ($2,800/yr)', desc: 'Protects against catastrophic care costs.', riskLevel: 'low', consequenceText: '-$233/mo premium, protected', apply: gs => {
+        gs.monthly_expenses += 233;
+        return { log: 'LTC insurance purchased. $2,800/yr for major protection.', statChanges: [{label:'-$233/mo', type:'neg'},{label:'Protected', type:'pos'}], quality:'good' };
+      }},
+      { id: 'self_insure', title: 'Self-Insure with Reserves', desc: 'Keep $300K earmarked for care costs.', riskLevel: 'med', consequenceText: 'Requires keeping reserve untouched', apply: gs => {
+        return { log: 'Committed to self-insuring. Requires keeping reserves liquid.', statChanges: [{label:'Reserve earmarked', type:'neutral'}], quality:'neutral' };
+      }},
+      { id: 'skip_ltc', title: 'Skip — Take the Risk', desc: '50% chance of needing care. High stakes.', riskLevel: 'high', consequenceText: '50% chance of $100K+ future hit', apply: gs => {
+        const crisis = Math.random() > 0.5;
+        if (crisis) {
+          const cost = 80000 + Math.random() * 60000;
+          gs.savings = Math.max(0, gs.savings - cost * 0.5);
+          gs.investments = Math.max(0, gs.investments - cost * 0.5);
+          return { log: `Needed LTC without insurance. ${fmt(cost)} in care costs.`, statChanges: [{label:`-${fmtK(cost)} care`, type:'neg'}], quality:'bad' };
+        }
+        return { log: 'Got lucky — no long-term care needed. Saved $2,800/yr.', statChanges: [{label:'Saved $2,800/yr', type:'pos'}], quality:'good' };
+      }}
+    ]
+  }
+);
 
 // ── Background/setup data ─────────────────────────────
 const FAMILY_BACKGROUNDS = [
@@ -1475,24 +1586,30 @@ async function startGameplay() {
 
   // Init game state
   const startAge = 18 + postHS.years;
+  // Realistic starting monthly expenses: rent + utilities ($120) + food ($400) + transport ($300) + misc ($280)
+  const baseMonthlyLiving = housing.rent + 1100;
   gpState = {
     age: startAge,
     endAge: 18 + lenCfg.years,
     name: charData.name || 'You',
     career_title: career.title,
-    salary: career.salary * (1 + postHS.salary_growth_bonus * postHS.years),
-    savings: bg.starting_savings + (postHS.years === 0 ? 5000 : 0),
+    // Salary modestly reduced by education path bonus — real entry salaries are lower
+    salary: career.salary * (1 + postHS.salary_growth_bonus * postHS.years) * 0.88,
+    // College grads often have less liquid savings at graduation
+    savings: postHS.has_college
+      ? Math.max(0, bg.starting_savings - postHS.years * 2000)
+      : bg.starting_savings + (postHS.years === 0 ? 3000 : 1500),
     debt: postHS.debt_base * bg.debt_modifier,
     investments: 0,
-    monthly_expenses: housing.rent + 500, // rent + basic living
+    monthly_expenses: baseMonthlyLiving,
     rent: housing.rent,
     housing_type: housing.housing_type,
     home_equity: housing.equity || 0,
     health: 85,
-    happiness: 70,
+    happiness: 68,
     stress: career.stress_start * 10,
     job_level: 1,
-    has_insurance: postHS.has_college,
+    has_insurance: postHS.has_college || selections.career === 'bigtech' || selections.career === 'healthcare',
     side_income: 0,
     has_side_hustle: false,
     has_car: true,
@@ -1527,24 +1644,35 @@ function buildEventQueue(totalYears, initialState) {
   // Shuffle the pool
   const shuffled = [...EVENT_POOL].sort(() => Math.random() - 0.5);
 
+  // Track a live state snapshot for condition-checking (updates as we build the queue)
+  const liveState = { ...initialState };
+
   for (let age = ageAtStart; age < endAge; age++) {
-    // Pick an applicable event or skip year
+    liveState.age = age;
+
+    // Pick applicable events given current live state
     const applicable = shuffled.filter(e => {
-      if (e.conditions && !e.conditions({ ...initialState, age })) return false;
+      if (e.conditions && !e.conditions(liveState)) return false;
       return true;
     });
 
-    // Not every year has a choice event — some years just "pass"
-    if (applicable.length > 0 && (Math.random() > 0.2 || age === ageAtStart)) {
+    // Events every year for long games; skip ~15% for natural quiet years
+    const forceEvent = age === ageAtStart || applicable.length > 0;
+    if (forceEvent && applicable.length > 0 && Math.random() > 0.15) {
       const evt = { ...applicable[Math.floor(Math.random() * applicable.length)], age };
       queue.push(evt);
-      // Remove from pool to avoid repetition (some can repeat)
-      const poolIdx = shuffled.indexOf(shuffled.find(e => e.id === evt.id));
-      if (poolIdx > -1 && !['lifestyle_creep','stock_market_crash','rent_hike'].includes(evt.id)) {
+      // Track state changes from known event types to keep conditions accurate
+      if (evt.id === 'relationship_milestone') liveState.partner = true;
+      if (evt.id === 'wedding_cost') { liveState.married = true; liveState.engaged = false; }
+      if (evt.id === 'child') liveState.has_child = true;
+      if (evt.id === 'side_hustle_opportunity') liveState.has_side_hustle = true;
+      // Remove one-shot events from pool
+      const poolIdx = shuffled.findIndex(e => e.id === evt.id);
+      const repeatable = ['lifestyle_creep','stock_market_crash','rent_hike','job_offer','promotion_offer','recession'];
+      if (poolIdx > -1 && !repeatable.includes(evt.id)) {
         shuffled.splice(poolIdx, 1);
       }
     } else {
-      // "Quiet year" — just advance finances
       queue.push({ id: '__quiet__', age, emoji: '📅', category: 'life', title: null });
     }
   }
@@ -1689,7 +1817,7 @@ function renderOutcomeReveal(evt, choice, result) {
       </div>
       <div style="text-align:center; margin-top:1rem;">
         <button class="btn btn-gold btn-continue" onclick="showNextEvent()">
-          ${gpCurrentEventIdx >= gpEvents.length ? 'See Your Results →' : 'Continue to Age ' + (gpState.age + 1) + ' →'}
+          ${gpCurrentEventIdx >= gpEvents.length ? 'See Your Results →' : (gpCurrentEventIdx < gpEvents.length ? 'Continue to Age ' + gpEvents[gpCurrentEventIdx].age + ' →' : 'See Your Results →')}
         </button>
       </div>
     </div>
@@ -1700,34 +1828,8 @@ function renderOutcomeReveal(evt, choice, result) {
 }
 
 function advanceYear(evt, result) {
-  // Annual financial simulation
-  const salaryGrowth = 0.03 + (CAREER_CHOICES.find(c => c.id === selections.career)?.growth || 5) * 0.005;
-  gpState.salary *= (1 + salaryGrowth);
-
-  const annualIncome = gpState.salary + gpState.side_income;
-  const annualExpenses = gpState.monthly_expenses * 12;
-  const annualDebtPay = gpState.debt > 0 ? Math.min(gpState.debt, 400 * 12) : 0;
-
-  const cashflow = annualIncome - annualExpenses - annualDebtPay;
-
-  if (cashflow > 0) {
-    const saveRate = 0.3;
-    const invest = cashflow * saveRate;
-    const save = cashflow * (1 - saveRate) * 0.5;
-    gpState.investments = (gpState.investments + invest) * 1.07; // 7% return
-    gpState.savings += save;
-  } else {
-    gpState.savings += cashflow; // drain savings
-    if (gpState.savings < 0) { gpState.debt += Math.abs(gpState.savings); gpState.savings = 0; }
-  }
-
-  gpState.debt = Math.max(0, gpState.debt - annualDebtPay);
-  if (gpState.home_equity > 0) gpState.home_equity *= 1.04;
-
-  // Natural stat drift
-  gpState.stress = Math.max(0, Math.min(100, gpState.stress + (Math.random() * 6 - 3)));
-  gpState.health = Math.max(0, Math.min(100, gpState.health + (Math.random() * 4 - 2)));
-  gpState.happiness = Math.max(0, Math.min(100, gpState.happiness + (Math.random() * 6 - 3)));
+  // Delegate to shared engine — keeps player and Gemini on identical math
+  advanceYearForState(gpState);
 }
 
 function recordNetWorth() {
@@ -1801,34 +1903,12 @@ function renderYearTimeline() {
 // ════════════════════════════════════════════════════════════════
 async function endGame() {
   if (gameMode === 'beat_gemini') {
-    // Get Gemini choices and simulate
-    showLoading('Calculating Gemini\'s results…');
-    const geminiResp = await fetch('/api/generate-gemini-choices', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ char_profile: { name: charData.name, background: charData.background, hometown: charData.hometown } })
-    });
-    const geminiChoices = await geminiResp.json();
-
-    const geminiSels = {
-      background: selections.background,
-      post_hs: geminiChoices.post_hs,
-      career: geminiChoices.career,
-      housing: geminiChoices.housing,
-      debt: geminiChoices.debt || 'refinance',
-      lifestyle: geminiChoices.lifestyle || 'invest_first',
-      emergency: geminiChoices.emergency || 'prepared'
-    };
-
-    const gResult = await fetch('/api/compute-results', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ selections: geminiSels, scenarios: [] })
-    });
-    const geminiResult = await gResult.json();
+    showLoading('Running Gemini\'s simulation…', `Gemini is making ${gpEvents.filter(e=>e.title).length} decisions — one moment…`);
+    await runGeminiSimulation();
     hideLoading();
-    buildBeatGeminiResults(geminiChoices, geminiResult);
+    buildBeatGeminiResults();
     return;
   }
-
   buildGameResults();
 }
 
@@ -1837,113 +1917,362 @@ function buildGameResults() {
   const score = calcScore(finalNW);
   const isGood = score >= 65, isMid = score >= 45;
 
-  document.getElementById('results-headline').textContent = `${gpState.name} at ${gpState.age}: Your snapshot`;
+  document.getElementById('results-headline').textContent = `${gpState.name} at age ${gpState.age}`;
 
   const dial = document.getElementById('score-dial');
-  dial.className = 'score-dial ' + (isGood ? 'green' : isMid ? 'amber' : 'red');
+  dial.className = 'score-dial ' + (score >= 65 ? 'green' : score >= 45 ? 'amber' : 'red');
   document.getElementById('score-num').textContent = score;
-  document.getElementById('score-text-title').textContent = isGood ? '💪 Strong Financial Foundation' : isMid ? '📊 Steady Progress' : '🔄 Rebuilding';
-  document.getElementById('score-text-body').textContent = isGood ? 'Your disciplined choices compounded into real wealth.' : isMid ? 'Good instincts, a few costly tradeoffs. Still time to shift.' : 'Life threw some curveballs. The story isn\'t over.';
+  document.getElementById('score-text-title').textContent = score >= 65 ? '💪 Financially Strong' : score >= 45 ? '📊 Treading Water' : score >= 25 ? '⚠️ Struggling' : '🔴 In Crisis';
+  document.getElementById('score-text-body').textContent = score >= 65
+    ? 'You built real wealth. Most people never get here — discipline and timing made the difference.'
+    : score >= 45 ? 'You survived and progressed, but missed key compounding windows. Small habit changes from year one would have changed everything.'
+    : score >= 25 ? 'Debt, emergencies, and lifestyle costs ate most of your income. The math wasn\'t working in your favor.'
+    : 'The financial system punishes starting behind. Debt compounded faster than wealth.';
 
   const oc = document.getElementById('outcome-card');
   oc.className = 'outcome-card ' + (isGood ? 'good' : isMid ? 'mid' : 'bad');
-  document.getElementById('outcome-title').textContent = isGood ? '🏆 Strong foundation built' : isMid ? '📈 Steady progress' : '🔄 Rebuilding is always possible';
-  document.getElementById('outcome-body').textContent = `Net worth ${fmtK(finalNW)} · Salary $${Math.round(gpState.salary/1000)}K/yr. ${
-    isGood ? 'Your mid-career decisions unlocked serious compound growth.' :
-    isMid ? 'Small adjustments in debt or savings rate could shift this significantly.' :
-    'Changing your savings rate by even 5% dramatically shifts the trajectory.'
+  document.getElementById('outcome-title').textContent = isGood ? '🏆 Wealth built — you beat the odds' : isMid ? '📈 Survived — but left money on the table' : '🔄 Financial hardship — real but recoverable';
+  document.getElementById('outcome-body').textContent = `Net worth ${fmtK(finalNW)} · Salary ${Math.round(gpState.salary/1000)}K/yr · Debt ${gpState.debt > 0 ? fmtK(gpState.debt) : '✓ clear'}. ${
+    isGood ? 'Your mid-career decisions unlocked serious compound growth. Tax-advantaged accounts, consistent investing, and avoiding lifestyle creep were the real differentiators.' :
+    isMid ? 'Small adjustments — starting investments 2 years earlier, or taking one fewer high-risk gamble — would have moved you from middle to strong.' :
+    'High-interest debt and insufficient emergency savings created a compounding deficit that was hard to escape. The system is harder than it looks.'
   }`;
 
+  // 8-metric grid for full picture
+  const grossIncome = gpState.salary + gpState.side_income;
+  const taxRate = grossIncome < 45000 ? 0.18 : grossIncome < 90000 ? 0.26 : grossIncome < 160000 ? 0.32 : 0.37;
   document.getElementById('metrics-grid').innerHTML = [
-    ['Net Worth', fmtK(finalNW), `at age ${gpState.age}`],
-    ['Annual Salary', `$${Math.round(gpState.salary/1000)}K`, 'current'],
-    ['Investments', fmtK(gpState.investments), 'portfolio'],
-    ['Health', Math.round(gpState.health) + '%', 'wellbeing'],
-  ].map(([l,v,s]) => `<div class="metric-card"><div class="metric-label">${l}</div><div class="metric-value">${v}</div><div class="metric-sub">${s}</div></div>`).join('');
+    ['Net Worth',    fmtK(finalNW),                        `age ${gpState.age}`],
+    ['Salary',       `${Math.round(gpState.salary/1000)}K`, 'gross/yr'],
+    ['Take-Home',    `${Math.round(gpState.salary*(1-taxRate)/1000)}K`, `after ~${Math.round(taxRate*100)}% tax`],
+    ['Investments',  fmtK(gpState.investments),            'portfolio value'],
+    ['Savings',      fmtK(gpState.savings),                'liquid cash'],
+    ['Debt',         gpState.debt > 0 ? fmtK(gpState.debt) : '✓ None', gpState.debt > 0 ? 'outstanding' : 'debt-free'],
+    ['Health',       Math.round(gpState.health) + '%',     'physical'],
+    ['Score',        score + '/99',                        'final rating'],
+  ].map(([l,v,s]) => `<div class="metric-card"><div class="metric-label">${l}</div><div class="metric-value" style="font-size:1.25rem;">${v}</div><div class="metric-sub">${s}</div></div>`).join('');
 
   buildChart(gpNetWorthHistory, 'nw-chart');
 
-  // Life events log
+  // Life events log — include the result text
   document.getElementById('events-list').innerHTML = gpHistory.map(h => {
     const q = h.quality;
     const icon = q==='great'?'🌟':q==='good'?'✅':q==='bad'?'💥':'⚖️';
-    return `<div class="event-item"><div class="event-age">Age ${h.age}</div><div class="event-icon">${icon}</div><div class="event-text"><strong>${h.event}</strong> — ${h.choice}</div></div>`;
+    const borderColor = q==='great'||q==='good' ? 'var(--sage)' : q==='bad' ? 'var(--rose)' : 'var(--border)';
+    return `<div class="event-item" style="border-left:3px solid ${borderColor};">
+      <div class="event-age">Age ${h.age}</div>
+      <div class="event-icon">${icon}</div>
+      <div class="event-text">
+        <strong>${h.event}</strong> → ${h.choice}
+        <div style="font-size:11.5px; color:var(--ink3); margin-top:3px;">${h.result}</div>
+      </div>
+    </div>`;
   }).join('');
 
-  // Insights
+  // Insights — richer, decision-specific
   const goodDecisions = gpHistory.filter(h => h.quality === 'great' || h.quality === 'good');
   const badDecisions = gpHistory.filter(h => h.quality === 'bad');
+  const totalDecisions = gpHistory.length;
+  const goodRate = totalDecisions > 0 ? Math.round((goodDecisions.length / totalDecisions) * 100) : 0;
+
   document.getElementById('insights-grid').innerHTML = [
-    ['Best Decision', 'green', goodDecisions.length > 0 ? `"${goodDecisions[0].choice}" at age ${goodDecisions[0].age}: ${goodDecisions[0].result}` : 'Every decision had tradeoffs. Small wins added up.'],
-    ['Costliest Moment', 'red', badDecisions.length > 0 ? `"${badDecisions[0].choice}" at age ${badDecisions[0].age}: ${badDecisions[0].result}` : 'You avoided major disasters. Strong defensive play.'],
-    ['Compound Effect', 'amber', `Every extra $100/mo saved early becomes ~$5,800 by ${gpState.age} at 7% return. Your ${Math.round(gpHistory.length)} decisions determined how much of that potential you captured.`],
-    ['What to Change', 'blue', finalNW < 50000 ? 'Try automating 15% of income to investments before any other spending.' : finalNW < 200000 ? 'Look for lifestyle creep opportunities to redirect to investments.' : 'You\'re on a strong path. Consider tax-advantaged accounts (Roth, HSA) to maximize efficiency.'],
+    ['Best Decision', 'green',
+      goodDecisions.length > 0
+        ? `Age ${goodDecisions[0].age}: "${goodDecisions[0].choice}" — ${goodDecisions[0].result}`
+        : 'No clearly winning decisions this run. Every choice was a tradeoff.'],
+    ['Costliest Mistake', 'red',
+      badDecisions.length > 0
+        ? `Age ${badDecisions[0].age}: "${badDecisions[0].choice}" — ${badDecisions[0].result}`
+        : 'No catastrophic decisions. Solid defensive play throughout.'],
+    ['Decision Record', 'amber',
+      `${goodDecisions.length} strong, ${badDecisions.length} costly, ${totalDecisions - goodDecisions.length - badDecisions.length} neutral out of ${totalDecisions} total decisions. Win rate: ${goodRate}%.`],
+    ['Reality Check', 'blue',
+      finalNW < 0 ? 'Negative net worth is more common than people admit — especially with student loans and medical debt. The US median at 35 is only ~$27K.'
+      : finalNW < 100000 ? 'Less than $100K at this age puts you near the US median — which means most people are in the same boat. Compound interest requires time and consistency.'
+      : finalNW < 500000 ? 'You\'re ahead of most Americans. The next frontier: ensuring your investment rate outpaces inflation (3%) and taxes don\'t erode returns.'
+      : 'Top 15% territory. Most wealth at this level comes from equity (home + investments) plus high income. You played the long game.'],
   ].map(([l,c,b]) => `<div class="insight-card"><div class="insight-label ${c}">${l}</div><div class="insight-body">${b}</div></div>`).join('');
 
-  if (gameMode === 'standard') {
+  if (gameMode === 'standard' || gameMode === 'random') {
     document.getElementById('score-entry-wrap').style.display = 'block';
     document.getElementById('score-name-input').value = gpState.name || '';
+    document.getElementById('score-entry-label').textContent = gameMode === 'random'
+      ? '📝 Enter your name for the Random Life leaderboard'
+      : '📝 Enter your name for the leaderboard';
   } else {
     document.getElementById('score-entry-wrap').style.display = 'none';
   }
 
-  window._lastResult = { score, final_nw: finalNW, final_salary: gpState.salary };
+  window._lastResult = { score, final_nw: finalNW, final_salary: gpState.salary, game_length: GAME_LENGTHS[gameLength]?.label || gameLength };
   show('screen-results');
 }
 
-function calcScore(finalNW) {
-  let score = 50;
-  if (finalNW > 500000) score += 30;
-  else if (finalNW > 300000) score += 22;
-  else if (finalNW > 150000) score += 14;
-  else if (finalNW > 50000) score += 5;
-  else if (finalNW < 0) score -= 25;
+function calcScore(finalNW, historyOverride, stateOverride) {
+  // Score 1-99. Average skilled run ~70, great play 85-95, exceptional 99.
+  const hist = historyOverride || gpHistory;
+  const st   = stateOverride   || gpState;
+  let score  = 0;
 
-  const goodCount = gpHistory.filter(h => h.quality === 'great' || h.quality === 'good').length;
-  const badCount = gpHistory.filter(h => h.quality === 'bad').length;
-  score += goodCount * 2;
-  score -= badCount * 3;
+  // Net Worth (0-55 pts) — calibrated so competent run scores 30-40 here
+  const endAge = st.endAge || st.age;
+  let nwThresholds;
+  if (endAge <= 28) {
+    nwThresholds = [[-999999,0],[-5000,3],[0,8],[15000,16],[40000,26],[80000,36],[150000,46],[250000,55]];
+  } else if (endAge <= 38) {
+    nwThresholds = [[-999999,0],[-10000,3],[0,8],[30000,14],[80000,22],[150000,30],[250000,38],[400000,46],[600000,55]];
+  } else {
+    nwThresholds = [[-999999,0],[0,5],[100000,12],[300000,20],[600000,30],[1000000,38],[1500000,46],[2200000,55]];
+  }
+  let nwScore = 0;
+  for (const [threshold, pts] of nwThresholds) {
+    if (finalNW >= threshold) nwScore = pts;
+  }
+  score += nwScore;
 
-  if (gpState.health > 70) score += 5;
-  if (gpState.happiness > 70) score += 5;
-  if (gpState.debt === 0) score += 8;
+  // Decision Quality (0-22 pts) — rewards good decisions, moderate bad penalty
+  const greats = hist.filter(h => h.quality === 'great').length;
+  const goods  = hist.filter(h => h.quality === 'good').length;
+  const bads   = hist.filter(h => h.quality === 'bad').length;
+  score += Math.max(0, Math.min(22, Math.round(greats * 3 + goods * 1.5 - bads * 2)));
 
-  const bg = FAMILY_BACKGROUNDS.find(b => b.id === selections.background);
-  if (bg?.id === 'working_class' && finalNW > 100000) score += 10;
-  if (bg?.id === 'challenging' && finalNW > 50000) score += 15;
+  // Wellbeing (0-10 pts)
+  const wellbeingAvg = (st.health + st.happiness + (100 - st.stress)) / 3;
+  score += Math.min(10, Math.floor(wellbeingAvg / 11));
 
-  return Math.max(10, Math.min(99, score));
+  // Debt-Free Bonus (0-5 pts)
+  if (st.debt === 0)        score += 5;
+  else if (st.debt < 20000) score += 2;
+
+  // Investment Discipline (0-4 pts)
+  if (st.investments > 0 && finalNW > 0) {
+    const ir = st.investments / Math.max(1, finalNW + st.debt);
+    if (ir > 0.5)      score += 4;
+    else if (ir > 0.2) score += 2;
+  }
+
+  // Background Hardship Bonus (0-3 pts)
+  const bgId = selections.background;
+  if ((bgId === 'working_class' || bgId === 'challenging') && finalNW > 80000) score += 3;
+
+  return Math.max(1, Math.min(99, Math.round(score)));
 }
 
-function buildBeatGeminiResults(geminiChoices, geminiResult) {
-  const playerNW = calcNetWorth();
+function calcCompositeScore(nw, score, health, happiness, stress, debt) {
+  const wellbeing = (health + happiness + (100 - stress)) / 3;
+  const bonus  = Math.min(5, Math.floor(wellbeing / 20));
+  const penalty = debt > 50000 ? 3 : debt > 20000 ? 1 : 0;
+  return Math.max(1, Math.min(99, score + bonus - penalty));
+}
+
+// ── Gemini parallel simulation state ─────────────────────────────
+let geminiHistory    = [];
+let geminiState      = {};
+let geminiNWHistory  = [];
+
+function initGeminiState() {
+  geminiState     = JSON.parse(JSON.stringify(gpState));
+  geminiHistory   = [];
+  geminiNWHistory = [];
+}
+
+function geminiCalcNetWorth() {
+  return Math.round((geminiState.savings||0) + (geminiState.investments||0) + (geminiState.home_equity||0) - (geminiState.debt||0));
+}
+
+async function askGeminiChoice(evt, gs, history) {
+  const choices = (evt.choices || []).map(c => ({
+    id: c.id, title: c.title, desc: c.desc,
+    consequenceText: c.consequenceText || '', riskLevel: c.riskLevel
+  }));
+  const storyText = typeof evt.story === 'function' ? evt.story(gs) : (evt.story || '');
+
+  try {
+    const resp = await fetch('/api/gemini-event-choice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event_title: evt.title,
+        story: storyText,
+        choices: choices,
+        state: {
+          age: gs.age,
+          salary: Math.round(gs.salary),
+          net_worth: Math.round((gs.savings||0)+(gs.investments||0)+(gs.home_equity||0)-(gs.debt||0)),
+          savings: Math.round(gs.savings||0),
+          investments: Math.round(gs.investments||0),
+          debt: Math.round(gs.debt||0),
+          health: Math.round(gs.health),
+          stress: Math.round(gs.stress),
+          happiness: Math.round(gs.happiness)
+        }
+      })
+    });
+    const data = await resp.json();
+    if (data.choice && (evt.choices || []).find(c => c.id === data.choice)) {
+      return data;
+    }
+  } catch(e) { /* fall through to heuristic */ }
+
+  // Heuristic fallback: prefer low-risk
+  const fallback = (evt.choices || []).find(c => c.riskLevel === 'low') || (evt.choices||[])[0];
+  return { choice: fallback?.id, reasoning: 'Chose the safest available option.' };
+}
+
+function advanceYearForState(st) {
+  const careerData = CAREER_CHOICES.find(c => c.id === selections.career);
+  const salaryGrowth = 0.02 + (careerData?.growth || 5) * 0.003;
+  st.salary *= (1 + salaryGrowth);
+  const grossIncome = st.salary + (st.side_income || 0);
+  const taxRate = grossIncome < 45000 ? 0.18 : grossIncome < 90000 ? 0.26 : grossIncome < 160000 ? 0.32 : 0.37;
+  const afterTax = grossIncome * (1 - taxRate);
+  const annualExp = st.monthly_expenses * 12;
+  const debtInt = (st.debt || 0) * 0.065;
+  const minPay = st.debt > 0 ? Math.max(2400, debtInt + st.debt * 0.03) : 0;
+  const actualPay = Math.min(minPay, (st.debt || 0) + debtInt);
+  const cashflow = afterTax - annualExp - actualPay;
+  if (st.debt > 0) st.debt = Math.max(0, st.debt + debtInt - actualPay);
+  if (cashflow > 0) {
+    st.investments = (st.investments + cashflow * 0.12) * 1.07;
+    st.savings = (st.savings + cashflow * 0.05) * 1.045;
+  } else {
+    st.savings += cashflow;
+    if (st.savings < 0) { st.debt += Math.abs(st.savings) * 1.22; st.savings = 0; }
+    st.investments *= 1.07;
+  }
+  if (st.home_equity > 0) st.home_equity *= 1.035;
+  st.monthly_expenses *= 1.025;
+  st.stress    = Math.max(0, Math.min(100, st.stress    + (Math.random()*8-3)));
+  st.health    = Math.max(0, Math.min(100, st.health    - (st.stress>70?1.5:0.3) + (Math.random()*3-1.5)));
+  st.happiness = Math.max(0, Math.min(100, st.happiness + (Math.random()*6-3.5)));
+}
+
+async function runGeminiSimulation() {
+  initGeminiState();
+  for (let i = 0; i < gpEvents.length; i++) {
+    const evt = gpEvents[i];
+    geminiState.age = evt.age;
+    geminiNWHistory.push({ age: evt.age, nw: geminiCalcNetWorth() });
+    if (evt.id === '__quiet__' || evt.title === null) {
+      advanceYearForState(geminiState);
+      continue;
+    }
+    const aiPick   = await askGeminiChoice(evt, geminiState, geminiHistory);
+    const choice   = (evt.choices || []).find(c => c.id === aiPick.choice);
+    if (choice) {
+      const result = choice.apply(geminiState);
+      geminiHistory.push({
+        age: evt.age, event: evt.title,
+        choice: choice.title, result: result.log,
+        quality: result.quality, reasoning: aiPick.reasoning || ''
+      });
+    }
+    advanceYearForState(geminiState);
+  }
+}
+
+function buildBeatGeminiResults() {
+  const playerNW    = calcNetWorth();
   const playerScore = calcScore(playerNW);
-  const geminiScore = geminiResult.score;
-  const playerWon = playerScore >= geminiScore;
+  const geminiNW    = geminiCalcNetWorth();
+  const geminiScore = calcScore(geminiNW, geminiHistory, geminiState);
+  const playerComp  = calcCompositeScore(playerNW, playerScore, gpState.health, gpState.happiness, gpState.stress, gpState.debt);
+  const geminiComp  = calcCompositeScore(geminiNW, geminiScore, geminiState.health, geminiState.happiness, geminiState.stress, geminiState.debt);
+  const playerWon   = playerComp >= geminiComp;
 
   document.getElementById('bg-headline').textContent = playerWon ? '🏆 You Beat Gemini!' : '🤖 Gemini Wins This Round';
-
   const pc = document.getElementById('player-compare-card');
   const gc = document.getElementById('gemini-compare-card');
-  if (playerWon) { pc.className = 'compare-card winner'; gc.className = 'compare-card'; document.getElementById('bg-player-badge').textContent = '🏆 WINNER'; document.getElementById('bg-player-badge').style.display = 'inline-block'; }
-  else { gc.className = 'compare-card winner-sage'; pc.className = 'compare-card'; document.getElementById('bg-gemini-badge').textContent = '🤖 WINNER'; document.getElementById('bg-gemini-badge').style.display = 'inline-block'; }
-
-  document.getElementById('bg-player-score').textContent = playerScore;
+  if (playerWon) {
+    pc.className = 'compare-card winner'; gc.className = 'compare-card';
+    document.getElementById('bg-player-badge').textContent = '🏆 WINNER';
+    document.getElementById('bg-player-badge').style.display = 'inline-block';
+    document.getElementById('bg-gemini-badge').style.display = 'none';
+  } else {
+    gc.className = 'compare-card winner-sage'; pc.className = 'compare-card';
+    document.getElementById('bg-gemini-badge').textContent = '🤖 WINNER';
+    document.getElementById('bg-gemini-badge').style.display = 'inline-block';
+    document.getElementById('bg-player-badge').style.display = 'none';
+  }
+  document.getElementById('bg-player-score').textContent = playerComp;
   document.getElementById('bg-player-nw').textContent = 'Net Worth: ' + fmtK(playerNW);
-  document.getElementById('bg-gemini-score').textContent = geminiScore;
-  document.getElementById('bg-gemini-nw').textContent = 'Net Worth: ' + fmtK(geminiResult.final_nw);
-  document.getElementById('gemini-reasoning-text').textContent = geminiChoices.reasoning || 'Gemini optimized for maximum compound growth.';
+  document.getElementById('bg-gemini-score').textContent = geminiComp;
+  document.getElementById('bg-gemini-nw').textContent = 'Net Worth: ' + fmtK(geminiNW);
+  const gGood = geminiHistory.filter(h=>h.quality==='great'||h.quality==='good').length;
+  const gBad  = geminiHistory.filter(h=>h.quality==='bad').length;
+  document.getElementById('gemini-reasoning-text').textContent =
+    `Gemini played ${geminiHistory.length} events: ${gGood} strong decisions, ${gBad} poor decisions. Final net worth: ${fmtK(geminiNW)}.`;
+
+  // Year-by-year comparison
+  const allAges = [...new Set([...gpHistory.map(h=>h.age), ...geminiHistory.map(h=>h.age)])].sort((a,b)=>a-b);
+  const yearRowsHtml = allAges.map(age => {
+    const pH = gpHistory.find(h=>h.age===age);
+    const gH = geminiHistory.find(h=>h.age===age);
+    const qi = q => q==='great'?'🌟':q==='good'?'✅':q==='bad'?'💥':'⚖️';
+    const pbg = pH ? (pH.quality==='bad'?'var(--rose-light)':pH.quality==='great'?'#ECFDF5':'white') : 'var(--cream2)';
+    const gbg = gH ? (gH.quality==='bad'?'var(--rose-light)':gH.quality==='great'?'#ECFDF5':'var(--sky-light)') : 'var(--cream2)';
+    return `<div style="display:grid;grid-template-columns:52px 1fr 1fr;gap:6px;align-items:start;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border);">
+      <div style="font-size:12px;font-weight:700;color:var(--ink3);padding-top:6px;">Age ${age}</div>
+      <div style="background:${pbg};border-radius:8px;padding:8px 10px;border:1px solid var(--border);">
+        <div style="font-size:10px;font-weight:700;color:var(--ink3);margin-bottom:3px;">${pH?qi(pH.quality)+' YOU — '+pH.event:'—'}</div>
+        <div style="font-size:12px;font-weight:600;">${pH?pH.choice:'No event this year'}</div>
+        ${pH?`<div style="font-size:11px;color:var(--ink3);margin-top:2px;">${pH.result}</div>`:''}
+      </div>
+      <div style="background:${gbg};border-radius:8px;padding:8px 10px;border:1px solid rgba(43,108,176,0.18);">
+        <div style="font-size:10px;font-weight:700;color:var(--sky);margin-bottom:3px;">${gH?qi(gH.quality)+' 🤖 GEMINI — '+gH.event:'—'}</div>
+        <div style="font-size:12px;font-weight:600;">${gH?gH.choice:'No event this year'}</div>
+        ${gH&&gH.reasoning?`<div style="font-size:11px;color:var(--sky);margin-top:2px;font-style:italic;">"${gH.reasoning}"</div>`:''}
+        ${gH?`<div style="font-size:11px;color:var(--ink3);margin-top:2px;">${gH.result}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Stats grid
+  const statsHtml = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem;">
+    <div>
+      <p class="section-title" style="margin-bottom:8px;">Your Final Stats</p>
+      <div class="metrics-grid" style="grid-template-columns:1fr 1fr;">
+        ${[['Net Worth',fmtK(playerNW)],['Salary','$'+Math.round(gpState.salary/1000)+'K/yr'],
+           ['Investments',fmtK(gpState.investments)],['Debt',gpState.debt>0?fmtK(gpState.debt):'✓ None'],
+           ['Health',Math.round(gpState.health)+'%'],['Happiness',Math.round(gpState.happiness)+'%'],
+           ['Stress',Math.round(gpState.stress)+'%'],['Score',playerComp+'/99']]
+          .map(([l,v])=>`<div class="metric-card"><div class="metric-label">${l}</div><div class="metric-value" style="font-size:1.1rem;">${v}</div></div>`).join('')}
+      </div>
+    </div>
+    <div>
+      <p class="section-title" style="margin-bottom:8px;">🤖 Gemini's Final Stats</p>
+      <div class="metrics-grid" style="grid-template-columns:1fr 1fr;">
+        ${[['Net Worth',fmtK(geminiNW)],['Salary','$'+Math.round(geminiState.salary/1000)+'K/yr'],
+           ['Investments',fmtK(geminiState.investments)],['Debt',geminiState.debt>0?fmtK(geminiState.debt):'✓ None'],
+           ['Health',Math.round(geminiState.health)+'%'],['Happiness',Math.round(geminiState.happiness)+'%'],
+           ['Stress',Math.round(geminiState.stress)+'%'],['Score',geminiComp+'/99']]
+          .map(([l,v])=>`<div class="metric-card" style="background:var(--sky-light);"><div class="metric-label">${l}</div><div class="metric-value" style="font-size:1.1rem;">${v}</div></div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+
+  const breakdownHtml = `<div style="background:white;border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1.5rem;">
+    <p class="section-title" style="margin-bottom:8px;">📊 Score Breakdown</p>
+    <p style="font-size:12px;color:var(--ink3);margin-bottom:10px;">Net Worth (55%) + Decisions (22%) + Wellbeing (10%) + Debt (5%) + Investments (4%) + Background (3%) — max 99</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div style="background:${playerWon?'var(--sage-light)':'var(--cream2)'};border-radius:8px;padding:10px;font-size:13px;">
+        <strong>You — ${playerComp}/99</strong><br>
+        Net Worth: ${fmtK(playerNW)}<br>
+        ✅ Strong: ${gpHistory.filter(h=>h.quality==='great'||h.quality==='good').length} &nbsp; 💥 Poor: ${gpHistory.filter(h=>h.quality==='bad').length}
+      </div>
+      <div style="background:${!playerWon?'var(--sky-light)':'var(--cream2)'};border-radius:8px;padding:10px;font-size:13px;">
+        <strong>Gemini — ${geminiComp}/99</strong><br>
+        Net Worth: ${fmtK(geminiNW)}<br>
+        ✅ Strong: ${gGood} &nbsp; 💥 Poor: ${gBad}
+      </div>
+    </div>
+  </div>`;
 
   document.getElementById('bg-player-results').innerHTML = `
-    <p class="section-title">Your Full Stats</p>
-    <div class="metrics-grid">
-      ${[['Net Worth',fmtK(playerNW),`at age ${gpState.age}`],['Salary','$'+Math.round(gpState.salary/1000)+'K','annual'],['Health',Math.round(gpState.health)+'%','wellbeing'],['Score',playerScore+'/99','final']]
-        .map(([l,v,s]) => `<div class="metric-card"><div class="metric-label">${l}</div><div class="metric-value">${v}</div><div class="metric-sub">${s}</div></div>`).join('')}
-    </div>
-    <p class="section-title" style="margin-top:1rem;">Your Decisions</p>
-    <div class="events-list">
-      ${gpHistory.map(h => { const q=h.quality; const icon=q==='great'?'🌟':q==='good'?'✅':q==='bad'?'💥':'⚖️'; return `<div class="event-item"><div class="event-age">Age ${h.age}</div><div class="event-icon">${icon}</div><div class="event-text"><strong>${h.event}</strong> — ${h.choice}</div></div>`; }).join('')}
-    </div>
+    ${statsHtml}
+    ${breakdownHtml}
+    <div class="divider"></div>
+    <p class="section-title" style="margin-bottom:12px;">Year-by-Year Decision Comparison</p>
+    <div style="margin-bottom:1.5rem;">${yearRowsHtml || '<p style="color:var(--ink3);font-size:13px;">No events to compare.</p>'}</div>
   `;
 
   show('screen-beat-gemini');
@@ -1977,15 +2306,52 @@ function buildChart(data, canvasId) {
 // ════════════════════════════════════════════════════════════════
 async function showHighScores() {
   const resp = await fetch('/api/high-scores');
-  const scores = await resp.json();
+  const allScores = await resp.json();
   const container = document.getElementById('scores-table-wrap');
-  if (!scores.length) {
-    container.innerHTML = '<p style="color:var(--ink3); font-size:14px; text-align:center; padding:2rem;">No scores yet. Play to get on the board!</p>';
-  } else {
-    container.innerHTML = `<table class="scores-table"><thead><tr><th>#</th><th>Name</th><th>Score</th><th>Net Worth</th><th>Mode</th></tr></thead><tbody>
-      ${scores.map((s,i) => `<tr><td><div class="rank-badge ${i===0?'gold':i===1?'silver':i===2?'bronze':''}">${i+1}</div></td><td style="font-weight:600;">${s.name}</td><td style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;">${s.score}<span style="font-size:12px;color:var(--ink3);font-family:var(--font-body);">/99</span></td><td>${fmtK(s.net_worth)}</td><td><span class="mode-pill ${s.mode}">${s.mode.replace('_',' ')}</span></td></tr>`).join('')}
+
+  const standardScores = allScores.filter(s => s.mode === 'standard');
+  const randomScores = allScores.filter(s => s.mode === 'random');
+  const beatScores = allScores.filter(s => s.mode === 'beat_gemini');
+
+  function renderTable(scores, emptyMsg) {
+    if (!scores.length) return `<p style="color:var(--ink3); font-size:14px; text-align:center; padding:2rem;">${emptyMsg}</p>`;
+    return `<table class="scores-table"><thead><tr><th>#</th><th>Name</th><th>Score</th><th>Net Worth</th><th>Length</th></tr></thead><tbody>
+      ${scores.map((s,i) => `<tr>
+        <td><div class="rank-badge ${i===0?'gold':i===1?'silver':i===2?'bronze':''}">${i+1}</div></td>
+        <td style="font-weight:600;">${s.name}</td>
+        <td style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;">${s.score}<span style="font-size:12px;color:var(--ink3);font-family:var(--font-body);">/99</span></td>
+        <td>${fmtK(s.net_worth)}</td>
+        <td><span class="mode-pill ${s.mode}" style="background:var(--cream2);color:var(--ink3);">${s.game_length || '—'}</span></td>
+      </tr>`).join('')}
     </tbody></table>`;
   }
+
+  container.innerHTML = `
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+      <div>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+          <span style="font-size:18px;">🗺️</span>
+          <span style="font-weight:700; font-size:14px;">Standard Mode</span>
+        </div>
+        ${renderTable(standardScores, 'No Standard scores yet.')}
+      </div>
+      <div>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+          <span style="font-size:18px;">🎲</span>
+          <span style="font-weight:700; font-size:14px;">Random Life</span>
+        </div>
+        ${renderTable(randomScores, 'No Random Life scores yet.')}
+      </div>
+    </div>
+    ${beatScores.length > 0 ? `
+      <div>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+          <span style="font-size:18px;">🤖</span>
+          <span style="font-weight:700; font-size:14px;">Beat Gemini</span>
+        </div>
+        ${renderTable(beatScores, '')}
+      </div>` : ''}
+  `;
   show('screen-highscores');
 }
 
@@ -1994,7 +2360,7 @@ async function submitHighScore() {
   if (!name) return;
   const r = window._lastResult;
   if (!r) return;
-  await fetch('/api/high-scores', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, score: r.score, net_worth: r.final_nw, mode: gameMode }) });
+  await fetch('/api/high-scores', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, score: r.score, net_worth: r.final_nw, mode: gameMode, game_length: GAME_LENGTHS[gameLength]?.label || gameLength }) });
   document.getElementById('score-saved-msg').style.display = 'inline';
   showToast('Score saved! 🏆');
 }
@@ -2017,8 +2383,10 @@ function show(id) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function showLoading(msg) {
+function showLoading(msg, sub) {
   document.getElementById('loading-message').textContent = msg || 'Loading…';
+  const subEl = document.getElementById('loading-sub');
+  if (subEl) subEl.textContent = sub || 'Please wait…';
   document.getElementById('loading-overlay').classList.add('active');
 }
 function hideLoading() { document.getElementById('loading-overlay').classList.remove('active'); }
@@ -2031,10 +2399,19 @@ function showToast(msg) {
 }
 
 function restartGame() {
-  selections = {}; charData = {}; gpState = {}; gpHistory = []; gpNetWorthHistory = []; gpEvents = []; gpCurrentEventIdx = 0;
+  selections = {}; charData = {}; gpState = {}; gpHistory = []; gpNetWorthHistory = [];
+  gpEvents = []; gpCurrentEventIdx = 0; gpPhase = 'event';
+  geminiHistory = []; geminiState = {}; geminiNWHistory = [];
   if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
-  document.getElementById('score-saved-msg').style.display = 'none';
-  document.getElementById('backstory-container').style.display = 'none';
+  const savedMsg = document.getElementById('score-saved-msg');
+  if (savedMsg) savedMsg.style.display = 'none';
+  const backstory = document.getElementById('backstory-container');
+  if (backstory) backstory.style.display = 'none';
+  // Reset badge visibility for next beat gemini round
+  const pb = document.getElementById('bg-player-badge');
+  const gb = document.getElementById('bg-gemini-badge');
+  if (pb) pb.style.display = 'none';
+  if (gb) gb.style.display = 'none';
   show('screen-intro');
 }
 
