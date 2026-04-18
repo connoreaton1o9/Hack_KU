@@ -1,0 +1,1684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Life Simulator — Your Story Starts Now</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --cream: #F5F0E8;
+  --cream2: #EDE7D9;
+  --ink: #1C1A14;
+  --ink2: #4A4535;
+  --ink3: #8A836E;
+  --gold: #C9971C;
+  --gold-light: #F5E6C0;
+  --gold-dark: #8B6914;
+  --sage: #4A7C59;
+  --sage-light: #D4ECD9;
+  --rose: #C4534A;
+  --rose-light: #FAE4E2;
+  --sky: #2B6CB0;
+  --sky-light: #DBEAFE;
+  --border: rgba(28,26,20,0.12);
+  --border2: rgba(28,26,20,0.22);
+  --shadow: 0 2px 8px rgba(28,26,20,0.08), 0 1px 3px rgba(28,26,20,0.06);
+  --shadow-lg: 0 8px 32px rgba(28,26,20,0.12), 0 2px 8px rgba(28,26,20,0.08);
+  --radius: 14px;
+  --radius-sm: 9px;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--cream);
+  color: var(--ink);
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.65;
+  background-image: 
+    radial-gradient(ellipse at 20% 0%, rgba(201,151,28,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, rgba(74,124,89,0.05) 0%, transparent 60%);
+}
+
+/* ── Grain texture overlay ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+.page { max-width: 760px; margin: 0 auto; padding: 2rem 1.25rem 5rem; position: relative; z-index: 1; }
+
+.screen { display: none; animation: slideUp 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
+.screen.active { display: block; }
+@keyframes slideUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+
+/* ═══════════════ LOADING OVERLAY ══════════════════ */
+#loading-overlay {
+  position: fixed; inset: 0;
+  background: rgba(245,240,232,0.95);
+  backdrop-filter: blur(8px);
+  display: none; align-items: center; justify-content: center;
+  z-index: 999;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+#loading-overlay.active { display: flex; }
+.loading-spinner {
+  width: 48px; height: 48px;
+  border: 3px solid var(--border);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  color: var(--ink2);
+  text-align: center;
+  max-width: 300px;
+}
+.loading-sub { font-size: 13px; color: var(--ink3); }
+
+/* ═══════════════ INTRO SCREEN ══════════════════ */
+.intro-masthead {
+  text-align: center;
+  padding: 3.5rem 2rem 3rem;
+  background: var(--cream);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+.intro-masthead::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--rose), var(--gold), var(--sage));
+}
+.masthead-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--ink3); margin-bottom: 1rem;
+}
+.masthead-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 6vw, 3.5rem);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin-bottom: 0.75rem;
+}
+.masthead-sub {
+  font-size: 1rem;
+  color: var(--ink2);
+  max-width: 480px;
+  margin: 0 auto 2rem;
+  line-height: 1.7;
+}
+.badge-strip {
+  display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 2.5rem;
+}
+.badge {
+  background: var(--cream2); border: 1px solid var(--border);
+  border-radius: 999px; padding: 4px 14px;
+  font-size: 12px; color: var(--ink3); font-weight: 500;
+}
+
+.mode-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  margin-bottom: 1rem;
+}
+@media (max-width: 500px) { .mode-grid { grid-template-columns: 1fr; } }
+
+.mode-card {
+  background: var(--cream2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1.25rem 1rem;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s;
+  position: relative;
+  overflow: hidden;
+}
+.mode-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.mode-card.mode-standard::before { background: var(--sky); }
+.mode-card.mode-random::before { background: var(--gold); }
+.mode-card.mode-beat::before { background: var(--rose); }
+.mode-card.mode-scores::before { background: var(--sage); }
+.mode-card:hover { border-color: var(--border2); box-shadow: var(--shadow); transform: translateY(-2px); }
+.mode-card:hover::before { opacity: 1; }
+.mode-icon { font-size: 28px; margin-bottom: 10px; display: block; }
+.mode-name { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+.mode-desc { font-size: 12px; color: var(--ink3); line-height: 1.5; }
+
+/* ═══════════════ CHARACTER CREATION ══════════════════ */
+.character-header {
+  margin-bottom: 2rem;
+}
+.ch-step-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-dark); margin-bottom: 6px; }
+.ch-section-title { font-family: var(--font-display); font-size: 1.8rem; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 0.5rem; }
+.ch-section-sub { font-size: 14px; color: var(--ink2); line-height: 1.6; }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+@media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
+
+.form-group label { display: block; font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink3); margin-bottom: 6px; }
+.form-group input, .form-group select {
+  width: 100%;
+  padding: 10px 14px;
+  background: white;
+  border: 1.5px solid var(--border2);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.form-group input:focus, .form-group select:focus { border-color: var(--gold); }
+
+.backstory-box {
+  background: white;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--gold);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 14px 16px;
+  font-size: 14px;
+  color: var(--ink2);
+  line-height: 1.7;
+  margin-bottom: 1.5rem;
+  min-height: 80px;
+  font-style: italic;
+}
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem; }
+@media (max-width: 520px) { .grid-2 { grid-template-columns: 1fr; } }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 1.5rem; }
+@media (max-width: 520px) { .grid-3 { grid-template-columns: 1fr; } }
+
+/* ═══════════════ CHOICE CARDS ══════════════════ */
+.choice-card {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1rem;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.12s;
+  text-align: left;
+  position: relative;
+}
+.choice-card:hover { border-color: var(--border2); box-shadow: var(--shadow); }
+.choice-card.selected { border-color: var(--gold); background: var(--gold-light); }
+.choice-card.selected .card-name { color: var(--gold-dark); }
+
+.selected-mark {
+  position: absolute; top: 10px; right: 10px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--gold); display: none;
+  align-items: center; justify-content: center;
+  font-size: 11px; color: white; font-weight: 700;
+}
+.choice-card.selected .selected-mark { display: flex; }
+
+.card-icon { font-size: 26px; margin-bottom: 8px; display: block; }
+.card-name { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 5px; }
+.card-desc { font-size: 12.5px; color: var(--ink2); line-height: 1.55; margin-bottom: 10px; }
+.tags { display: flex; gap: 5px; flex-wrap: wrap; }
+.tag { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 999px; }
+.tag-green { background: var(--sage-light); color: var(--sage); }
+.tag-red { background: var(--rose-light); color: var(--rose); }
+.tag-amber { background: var(--gold-light); color: var(--gold-dark); }
+.tag-blue { background: var(--sky-light); color: var(--sky); }
+
+/* ═══════════════ GAME CHAPTERS ══════════════════ */
+.chapter-wrap { }
+
+.progress-bar-outer { margin-bottom: 2rem; }
+.step-dots {
+  display: flex; gap: 6px; align-items: center; margin-bottom: 8px;
+}
+.step-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--border2); transition: all 0.3s;
+}
+.step-dot.done { background: var(--gold); width: 10px; height: 10px; }
+.step-dot.active { background: var(--gold); transform: scale(1.4); box-shadow: 0 0 0 4px var(--gold-light); }
+.progress-labels { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--ink3); }
+
+.chapter-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-dark); margin-bottom: 6px; }
+.chapter-title { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; margin-bottom: 0.75rem; letter-spacing: -0.01em; }
+
+.chapter-story {
+  font-size: 14px; color: var(--ink2); line-height: 1.75;
+  background: white;
+  border-left: 3px solid var(--gold);
+  padding: 14px 18px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  margin-bottom: 1.75rem;
+  font-style: italic;
+}
+
+/* ── Scenario card ── */
+.scenario-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.scenario-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 4px; height: 100%;
+}
+.scenario-card.positive::before { background: var(--sage); }
+.scenario-card.negative::before { background: var(--rose); }
+.scenario-card.neutral::before { background: var(--gold); }
+.scenario-emoji { font-size: 2rem; margin-bottom: 8px; display: block; }
+.scenario-title { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+.scenario-story { font-size: 13.5px; color: var(--ink2); line-height: 1.65; margin-bottom: 10px; }
+.scenario-impact {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 999px;
+}
+.scenario-impact.positive { background: var(--sage-light); color: var(--sage); }
+.scenario-impact.negative { background: var(--rose-light); color: var(--rose); }
+.scenario-impact.neutral { background: var(--gold-light); color: var(--gold-dark); }
+
+.nav-row {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 1.5rem; padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+/* ═══════════════ BUTTONS ══════════════════ */
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 11px 22px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  border: 1.5px solid var(--border2);
+  background: white; color: var(--ink);
+  transition: all 0.15s;
+  text-decoration: none;
+}
+.btn:hover { background: var(--cream2); transform: translateY(-1px); }
+.btn:active { transform: none; }
+.btn-primary { background: var(--ink); color: white; border-color: var(--ink); }
+.btn-primary:hover { background: var(--ink2); }
+.btn-gold { background: var(--gold); color: white; border-color: var(--gold); }
+.btn-gold:hover { background: var(--gold-dark); border-color: var(--gold-dark); }
+.btn-sm { padding: 8px 16px; font-size: 13px; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+
+/* ═══════════════ RESULTS ══════════════════ */
+.results-header { margin-bottom: 2rem; }
+.results-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink3); margin-bottom: 6px; }
+.results-title { font-family: var(--font-display); font-size: 2rem; font-weight: 900; letter-spacing: -0.02em; }
+
+.score-banner {
+  display: flex; align-items: center; gap: 1.5rem;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  margin-bottom: 1.5rem;
+}
+.score-dial {
+  flex-shrink: 0;
+  width: 88px; height: 88px;
+  border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: var(--cream2);
+  border: 4px solid var(--gold);
+  position: relative;
+}
+.score-dial.green { border-color: var(--sage); background: var(--sage-light); }
+.score-dial.amber { border-color: var(--gold); background: var(--gold-light); }
+.score-dial.red { border-color: var(--rose); background: var(--rose-light); }
+.score-dial-num { font-family: var(--font-display); font-size: 2rem; font-weight: 900; line-height: 1; color: var(--ink); }
+.score-dial-label { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink3); margin-top: 2px; }
+.score-text-title { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+.score-text-body { font-size: 13px; color: var(--ink2); line-height: 1.55; }
+
+.outcome-card {
+  padding: 1.25rem;
+  border-radius: var(--radius);
+  margin-bottom: 1.5rem;
+  border-width: 1px;
+  border-style: solid;
+}
+.outcome-card.good { background: var(--sage-light); border-color: rgba(74,124,89,0.3); }
+.outcome-card.mid { background: var(--gold-light); border-color: rgba(201,151,28,0.3); }
+.outcome-card.bad { background: var(--rose-light); border-color: rgba(196,83,74,0.3); }
+.outcome-title { font-size: 15px; font-weight: 700; margin-bottom: 5px; }
+.outcome-card.good .outcome-title { color: var(--sage); }
+.outcome-card.mid .outcome-title { color: var(--gold-dark); }
+.outcome-card.bad .outcome-title { color: var(--rose); }
+.outcome-body { font-size: 13px; line-height: 1.6; }
+.outcome-card.good .outcome-body { color: #2d6b42; }
+.outcome-card.mid .outcome-body { color: var(--gold-dark); }
+.outcome-card.bad .outcome-body { color: #8B3128; }
+
+.metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+@media (max-width: 520px) { .metrics-grid { grid-template-columns: 1fr 1fr; } }
+.metric-card { background: var(--cream2); border-radius: var(--radius-sm); padding: 0.9rem; }
+.metric-label { font-size: 10px; color: var(--ink3); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
+.metric-value { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--ink); }
+.metric-sub { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+
+.section-title { font-weight: 700; font-size: 14px; color: var(--ink); margin-bottom: 0.75rem; letter-spacing: 0.01em; }
+.divider { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+
+.chart-wrap {
+  background: white; border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 1.25rem; margin-bottom: 1.5rem; box-shadow: var(--shadow);
+}
+.chart-canvas-wrap { position: relative; height: 220px; }
+
+.events-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.5rem; }
+.event-item {
+  display: flex; gap: 12px; align-items: flex-start;
+  background: white; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 14px; box-shadow: var(--shadow);
+}
+.event-age { font-size: 11px; font-weight: 700; color: var(--ink3); min-width: 40px; padding-top: 2px; }
+.event-icon { font-size: 16px; min-width: 22px; }
+.event-text { font-size: 13px; color: var(--ink2); line-height: 1.5; }
+
+.insights-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem; }
+@media (max-width: 520px) { .insights-grid { grid-template-columns: 1fr; } }
+.insight-card { background: white; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; box-shadow: var(--shadow); }
+.insight-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+.insight-label.green { color: var(--sage); }
+.insight-label.red { color: var(--rose); }
+.insight-label.blue { color: var(--sky); }
+.insight-label.amber { color: var(--gold-dark); }
+.insight-body { font-size: 13px; color: var(--ink2); line-height: 1.55; }
+
+/* ═══════════════ BEAT GEMINI COMPARE ══════════════════ */
+.compare-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 2rem; }
+@media (max-width: 500px) { .compare-wrap { grid-template-columns: 1fr; } }
+.compare-card {
+  background: white; border: 2px solid var(--border); border-radius: var(--radius);
+  padding: 1.5rem; text-align: center; box-shadow: var(--shadow);
+}
+.compare-card.winner { border-color: var(--gold); background: var(--gold-light); }
+.compare-card.winner-sage { border-color: var(--sage); background: var(--sage-light); }
+.compare-label { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink3); margin-bottom: 8px; }
+.compare-score { font-family: var(--font-display); font-size: 3rem; font-weight: 900; color: var(--ink); line-height: 1; }
+.compare-nw { font-size: 14px; color: var(--ink2); margin-top: 6px; }
+.compare-winner-badge { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 3px 12px; border-radius: 999px; margin-top: 10px; display: inline-block; }
+.compare-card.winner .compare-winner-badge { background: var(--gold-dark); color: white; }
+.compare-card.winner-sage .compare-winner-badge { background: var(--sage); color: white; }
+
+.gemini-reasoning {
+  background: var(--sky-light); border: 1px solid rgba(43,108,176,0.2); border-radius: var(--radius);
+  padding: 1.25rem; margin-bottom: 1.5rem;
+}
+.gemini-reasoning-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sky); margin-bottom: 6px; }
+.gemini-reasoning-text { font-size: 13.5px; color: var(--ink2); line-height: 1.6; font-style: italic; }
+
+/* ═══════════════ HIGH SCORES ══════════════════ */
+.scores-table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
+.scores-table th {
+  text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink3); padding: 8px 12px; border-bottom: 2px solid var(--border);
+}
+.scores-table td {
+  padding: 12px; font-size: 13.5px; border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.scores-table tr:hover td { background: var(--cream2); }
+.rank-badge {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--cream2); display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+}
+.rank-badge.gold { background: var(--gold); color: white; }
+.rank-badge.silver { background: #9CA3AF; color: white; }
+.rank-badge.bronze { background: #CD7C5B; color: white; }
+.mode-pill { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 999px; }
+.mode-pill.standard { background: var(--sky-light); color: var(--sky); }
+.mode-pill.random { background: var(--gold-light); color: var(--gold-dark); }
+.mode-pill.beat_gemini { background: var(--rose-light); color: var(--rose); }
+
+/* ═══════════════ SCORE ENTRY ══════════════════ */
+.score-entry {
+  background: white; border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 1.5rem; box-shadow: var(--shadow); margin-bottom: 1.5rem;
+}
+.score-entry label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--ink2); }
+.score-entry input {
+  width: 100%; padding: 10px 14px;
+  border: 1.5px solid var(--border2); border-radius: var(--radius-sm);
+  font-family: var(--font-body); font-size: 15px;
+  outline: none; transition: border-color 0.15s;
+  margin-bottom: 12px;
+  background: var(--cream);
+}
+.score-entry input:focus { border-color: var(--gold); }
+
+/* ═══════════════ TOAST ══════════════════ */
+.toast {
+  position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px);
+  background: var(--ink); color: white;
+  padding: 12px 24px; border-radius: 999px;
+  font-size: 14px; font-weight: 500;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 999;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ── random char card ── */
+.char-reveal {
+  background: white; border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 1.5rem; box-shadow: var(--shadow); margin-bottom: 1.5rem;
+  position: relative; overflow: hidden;
+}
+.char-reveal::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(201,151,28,0.05) 0%, transparent 60%);
+  pointer-events: none;
+}
+.char-reveal-name { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; margin-bottom: 4px; }
+.char-reveal-meta { font-size: 13px; color: var(--ink3); margin-bottom: 12px; }
+.char-reveal-backstory { font-size: 14px; color: var(--ink2); line-height: 1.7; font-style: italic; }
+
+/* Animation helpers */
+.fade-in { animation: fadeIn 0.4s ease both; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.results-nav { display: flex; gap: 10px; flex-wrap: wrap; padding-top: 1rem; border-top: 1px solid var(--border); margin-top: 1rem; }
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loading-message">Generating your story…</div>
+  <div class="loading-sub">Gemini AI is crafting your life scenarios</div>
+</div>
+
+<!-- Toast notification -->
+<div id="toast" class="toast"></div>
+
+<div class="page">
+
+<!-- ═══════════════════ SCREEN: INTRO ═══════════════════ -->
+<div id="screen-intro" class="screen active">
+  <div class="intro-masthead">
+    <p class="masthead-label">An Interactive Life Simulation</p>
+    <h1 class="masthead-title">Your story<br>starts now</h1>
+    <p class="masthead-sub">Stand at the edge of high school graduation. Every choice you make in the next 20 years shapes who you become — and what your financial future looks like.</p>
+    <div class="badge-strip">
+      <span class="badge">📍 Starts at age 18</span>
+      <span class="badge">🎲 College is optional</span>
+      <span class="badge">🤖 AI-powered scenarios</span>
+      <span class="badge">⚡ Beat Gemini mode</span>
+    </div>
+    <p style="font-size:13px; color:var(--ink3); margin-bottom:1.5rem;">Choose your experience:</p>
+    <div class="mode-grid">
+      <div class="mode-card mode-standard" onclick="startStandard()">
+        <span class="mode-icon">🗺️</span>
+        <div class="mode-name">Standard Mode</div>
+        <div class="mode-desc">Build your character, make choices, see how your life unfolds. High scores tracked.</div>
+      </div>
+      <div class="mode-card mode-random" onclick="startRandom()">
+        <span class="mode-icon">🎲</span>
+        <div class="mode-name">Random Life</div>
+        <div class="mode-desc">Gemini assigns you a random character and background. Play the hand you're dealt.</div>
+      </div>
+      <div class="mode-card mode-beat" onclick="startBeatGemini()">
+        <span class="mode-icon">🤖</span>
+        <div class="mode-name">Beat Gemini</div>
+        <div class="mode-desc">You and Gemini both get the same random scenario. Can you outplay the AI?</div>
+      </div>
+      <div class="mode-card mode-scores" onclick="showHighScores()">
+        <span class="mode-icon">🏆</span>
+        <div class="mode-name">High Scores</div>
+        <div class="mode-desc">See the leaderboard for best financial outcomes in Standard mode.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ SCREEN: CHARACTER CREATION ═══════════════════ -->
+<div id="screen-character" class="screen">
+  <div class="character-header">
+    <p class="ch-step-label">Step 1 of 7 — Your Identity</p>
+    <h2 class="ch-section-title">Who are you?</h2>
+    <p class="ch-section-sub">This is your story. Let's make it personal.</p>
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label>First Name</label>
+      <input type="text" id="char-first-name" placeholder="Alex" maxlength="20">
+    </div>
+    <div class="form-group">
+      <label>Last Name</label>
+      <input type="text" id="char-last-name" placeholder="Rivera" maxlength="20">
+    </div>
+  </div>
+
+  <div class="form-group" style="margin-bottom:16px;">
+    <label>Hometown</label>
+    <select id="char-hometown">
+      <option value="">Select your hometown…</option>
+    </select>
+  </div>
+
+  <div style="margin-bottom:1.25rem;">
+    <p class="section-title" style="margin-bottom:10px;">Family Background</p>
+    <div class="grid-2" id="bg-choices"></div>
+  </div>
+
+  <div id="backstory-container" style="display:none;">
+    <p class="section-title" style="margin-bottom:8px;">Your Story</p>
+    <div class="backstory-box" id="backstory-text">Generating your backstory…</div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn btn-sm" onclick="show('screen-intro')">← Back</button>
+    <button class="btn btn-gold" id="char-next-btn" disabled onclick="goToPostHS()">Set My Path →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════ SCREEN: RANDOM CHARACTER REVEAL ═══════════════════ -->
+<div id="screen-random-reveal" class="screen">
+  <div class="character-header">
+    <p class="ch-step-label" id="random-mode-label">Random Life — Your Character</p>
+    <h2 class="ch-section-title">Meet yourself</h2>
+    <p class="ch-section-sub">Gemini has assigned you a character. This is the hand you've been dealt.</p>
+  </div>
+
+  <div class="char-reveal fade-in">
+    <div class="char-reveal-name" id="random-char-name">Loading…</div>
+    <div class="char-reveal-meta" id="random-char-meta"></div>
+    <div class="char-reveal-backstory" id="random-char-backstory">Generating backstory…</div>
+  </div>
+
+  <div style="background: var(--cream2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1.5rem;">
+    <p class="section-title" style="margin-bottom:4px;">Your Background</p>
+    <div id="random-bg-display" style="font-size:13.5px; color:var(--ink2); line-height:1.6;"></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn btn-sm" onclick="show('screen-intro')">← Back</button>
+    <button class="btn btn-gold" onclick="proceedFromRandom()">Begin Journey →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════ SCREEN: POST-HIGH SCHOOL ═══════════════════ -->
+<div id="screen-post-hs" class="screen">
+  <div class="progress-bar-outer">
+    <div class="step-dots" id="chapter-dots"></div>
+    <div class="progress-labels">
+      <span id="chapter-progress-label"></span>
+      <span id="chapter-age-label"></span>
+    </div>
+  </div>
+
+  <p class="chapter-eyebrow">Chapter 1 · Age 18</p>
+  <h2 class="chapter-title">High school's over. What now?</h2>
+  <div class="chapter-story" id="post-hs-story">
+    The cap and gown are off. Your whole life is in front of you.
+    Your phone is buzzing with congratulations. But tomorrow morning, the real question arrives:
+    what path do you take from here?
+  </div>
+
+  <div class="grid-2" id="post-hs-choices"></div>
+
+  <div class="nav-row">
+    <button class="btn btn-sm" id="post-hs-back" onclick="postHSBack()">← Back</button>
+    <button class="btn btn-gold" id="post-hs-next" disabled onclick="goToCareer()">Continue →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════ SCREEN: CAREER ═══════════════════ -->
+<div id="screen-career" class="screen">
+  <div class="progress-bar-outer">
+    <div class="step-dots" id="career-dots"></div>
+    <div class="progress-labels"><span id="career-progress-label"></span><span id="career-age-label"></span></div>
+  </div>
+
+  <p class="chapter-eyebrow" id="career-eyebrow">Chapter 2 · Age 22</p>
+  <h2 class="chapter-title" id="career-title">What will you do for work?</h2>
+  <div class="chapter-story" id="career-story">
+    Your first chapter is complete. Now you need to build a career.
+    What kind of work speaks to you — and what can you realistically get?
+  </div>
+
+  <div class="grid-2" id="career-choices"></div>
+
+  <div class="nav-row">
+    <button class="btn btn-sm" onclick="show('screen-post-hs')">← Back</button>
+    <button class="btn btn-gold" id="career-next" disabled onclick="goToHousing()">Continue →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════ SCREEN: HOUSING ═══════════════════ -->
+<div id="screen-housing" class="screen">
+  <div class="progress-bar-outer">
+    <div class="step-dots" id="housing-dots"></div>
+    <div class="progress-labels"><span id="housing-progress-label"></span><span></span></div>
+  </div>
+
+  <p class="chapter-eyebrow">Chapter 3 · Age <span id="housing-age"></span></p>
+  <h2 class="chapter-title">Where do you live?</h2>
+  <div class="chapter-story">
+    Your lease is up. Rent in your city just jumped 18%. A college friend wants to buy together.
+    A family member offers a cheap room back home. Every option is a different life.
+  </div>
+
+  <div class="grid-2" id="housing-choices"></div>
+
+  <div class="nav-row">
+    <button class="btn btn-sm" onclick="show('screen-career')">← Back</button>
+    <button class="btn btn-gold" id="housing-next" disabled onclick="goToDebt()">Continue →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════ SCREEN: DEBT ═══════════════════ -->
+<div id="screen-debt" class="screen">
+  <div class="progress-bar-outer">
+    <div class="step-dots" id="debt-dots"></div>
+    <div class="progress-labels"><span id="debt-progress-label"></span><span></span></div>
+  </div>
+
+  <p class="chapter-eyebrow">Chapter 4 · Age <span id="debt-age"></span></p>
+  <h2 class="chapter-title" id="debt-title">The weight of the loans</h2>
+  <div class="chapter-story" id="debt-story">
+    Your grace period just ended. That number has been sitting in the back of your mind every day.
+    Now you have to decide: how do you actually deal with it?
+  </div>
+
+  <div class="grid-2" id="debt-choices"></div>
+
+  <div class="nav-row">
+    <button class="btn btn-sm" onclick="show('screen-housing')">← Back</button>
+    <button class="btn btn-gold" id="debt-next" disabled onclick="goToLifestyle()">Continue →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════ SCREEN: LIFESTYLE ═══════════════════ -->
+<div id="screen-lifestyle" class="screen">
+  <div class="progress-bar-outer">
+    <div class="step-dots" id="lifestyle-dots"></div>
+    <div class="progress-labels"><span id="lifestyle-progress-label"></span><span></span></div>
+  </div>
+
+  <p class="chapter-eyebrow">Chapter 5 · Age <span id="lifestyle-age"></span></p>
+  <h2 class="chapter-title">The raise arrives</h2>
+  <div class="chapter-story">
+    You worked hard and it's paying off. Your income went up — but so did the temptation.
+    Your friends are upgrading their lives. Your car just died. How do you handle the extra cash?
+  </div>
+
+  <div class="grid-2" id="lifestyle-choices"></div>
+
+  <div class="nav-row">
+    <button class="btn btn-sm" onclick="show('screen-debt')">← Back</button>
+    <button class="btn btn-gold" id="lifestyle-next" disabled onclick="goToEmergency()">Continue →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════ SCREEN: EMERGENCY ═══════════════════ -->
+<div id="screen-emergency" class="screen">
+  <div class="progress-bar-outer">
+    <div class="step-dots" id="emergency-dots"></div>
+    <div class="progress-labels"><span id="emergency-progress-label"></span><span></span></div>
+  </div>
+
+  <p class="chapter-eyebrow">Chapter 6 · Age 28</p>
+  <h2 class="chapter-title">When life hits hard</h2>
+  <div class="chapter-story">
+    Six years of building. Out of nowhere — a layoff, a medical bill, a family crisis. 
+    $8–12K, just like that. This is the moment you find out how prepared you actually are.
+  </div>
+
+  <div class="grid-2" id="emergency-choices"></div>
+
+  <div class="nav-row">
+    <button class="btn btn-sm" onclick="show('screen-lifestyle')">← Back</button>
+    <button class="btn btn-gold" id="emergency-next" disabled onclick="computeAndShow()">See Your Future →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════ SCREEN: RESULTS ═══════════════════ -->
+<div id="screen-results" class="screen">
+  <div class="results-header">
+    <p class="results-label">Your Financial Story</p>
+    <h2 class="results-title" id="results-headline">Age 37: Your snapshot</h2>
+  </div>
+
+  <div class="score-banner">
+    <div class="score-dial" id="score-dial">
+      <div class="score-dial-num" id="score-num">—</div>
+      <div class="score-dial-label">Score</div>
+    </div>
+    <div>
+      <div class="score-text-title" id="score-text-title"></div>
+      <div class="score-text-body" id="score-text-body"></div>
+    </div>
+  </div>
+
+  <div class="outcome-card" id="outcome-card">
+    <div class="outcome-title" id="outcome-title"></div>
+    <div class="outcome-body" id="outcome-body"></div>
+  </div>
+
+  <div class="metrics-grid" id="metrics-grid"></div>
+
+  <div class="chart-wrap">
+    <p class="section-title">Net Worth Over Time</p>
+    <div class="chart-canvas-wrap"><canvas id="nw-chart"></canvas></div>
+  </div>
+
+  <div class="divider"></div>
+  <p class="section-title">Key Life Events</p>
+  <div class="events-list" id="events-list"></div>
+
+  <div class="divider"></div>
+  <p class="section-title">AI-Generated Moments</p>
+  <div id="scenarios-display"></div>
+
+  <div class="divider"></div>
+  <p class="section-title">Insights</p>
+  <div class="insights-grid" id="insights-grid"></div>
+
+  <!-- Score entry for Standard mode -->
+  <div id="score-entry-wrap" class="score-entry" style="display:none;">
+    <label>📝 Enter your name for the leaderboard (Standard mode)</label>
+    <input type="text" id="score-name-input" placeholder="Your name…" maxlength="30">
+    <button class="btn btn-gold" onclick="submitHighScore()">Save to Leaderboard</button>
+    <span id="score-saved-msg" style="font-size:13px; color:var(--sage); margin-left:12px; display:none;">Saved! ✓</span>
+  </div>
+
+  <div class="results-nav">
+    <button class="btn btn-primary" onclick="restartGame()">Play Again</button>
+    <button class="btn" onclick="shareResults()">Copy Result</button>
+    <span id="share-msg" style="font-size:13px; color:var(--sage); align-self:center; display:none;">Copied!</span>
+  </div>
+</div>
+
+<!-- ═══════════════════ SCREEN: BEAT GEMINI RESULTS ═══════════════════ -->
+<div id="screen-beat-gemini" class="screen">
+  <div class="results-header">
+    <p class="results-label">Beat Gemini — Final Score</p>
+    <h2 class="results-title" id="bg-headline">The Results Are In</h2>
+  </div>
+
+  <div class="compare-wrap">
+    <div class="compare-card" id="player-compare-card">
+      <div class="compare-label">You</div>
+      <div class="compare-score" id="bg-player-score">—</div>
+      <div class="compare-nw" id="bg-player-nw"></div>
+      <div class="compare-winner-badge" id="bg-player-badge" style="display:none;"></div>
+    </div>
+    <div class="compare-card" id="gemini-compare-card">
+      <div class="compare-label">🤖 Gemini</div>
+      <div class="compare-score" id="bg-gemini-score">—</div>
+      <div class="compare-nw" id="bg-gemini-nw"></div>
+      <div class="compare-winner-badge" id="bg-gemini-badge" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div class="gemini-reasoning">
+    <div class="gemini-reasoning-label">Gemini's Strategy</div>
+    <div class="gemini-reasoning-text" id="gemini-reasoning-text"></div>
+  </div>
+
+  <div class="divider"></div>
+  <p class="section-title">Gemini's Choices vs. Yours</p>
+  <div id="choices-compare" style="margin-bottom:1.5rem;"></div>
+
+  <div class="divider"></div>
+  <div id="bg-player-results"></div>
+
+  <div class="results-nav">
+    <button class="btn btn-primary" onclick="restartGame()">Play Again</button>
+  </div>
+</div>
+
+<!-- ═══════════════════ SCREEN: HIGH SCORES ═══════════════════ -->
+<div id="screen-highscores" class="screen">
+  <div class="character-header">
+    <p class="ch-step-label">Standard Mode</p>
+    <h2 class="ch-section-title">🏆 Leaderboard</h2>
+    <p class="ch-section-sub">Top financial outcomes from Standard mode playthroughs.</p>
+  </div>
+
+  <div id="scores-table-wrap"></div>
+
+  <div class="nav-row" style="justify-content:flex-start;">
+    <button class="btn btn-sm" onclick="show('screen-intro')">← Back to Menu</button>
+  </div>
+</div>
+
+</div><!-- end .page -->
+
+<script>
+// ═══════════════════════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════════════════════
+
+let gameMode = 'standard'; // 'standard', 'random', 'beat_gemini'
+let charData = {};
+let selections = {};
+let gameScenarios = [];
+let geminiChoices = null;
+let geminiResult = null;
+let chartInstance = null;
+let gameData = {}; // all choice data from server
+
+// ─── Init ───────────────────────────────────────────────
+async function init() {
+  const resp = await fetch('/api/character-data');
+  gameData = await resp.json();
+  populateHometowns();
+  renderBackgroundChoices();
+  renderAllChoices();
+}
+
+function populateHometowns() {
+  const sel = document.getElementById('char-hometown');
+  gameData.hometowns.forEach(h => {
+    const opt = document.createElement('option');
+    opt.value = h;
+    opt.textContent = h;
+    sel.appendChild(opt);
+  });
+}
+
+function renderBackgroundChoices() {
+  const container = document.getElementById('bg-choices');
+  container.innerHTML = gameData.backgrounds.map(bg => `
+    <div class="choice-card" data-choice-type="background" data-choice-id="${bg.id}" onclick="selectBG('${bg.id}')">
+      <div class="selected-mark">✓</div>
+      <div class="card-name">${bg.label}</div>
+      <div class="card-desc">${bg.desc}</div>
+    </div>
+  `).join('');
+}
+
+function renderAllChoices() {
+  renderChoiceGrid('post-hs-choices', gameData.post_hs_choices, 'post_hs', selectPostHS);
+  renderChoiceGrid('career-choices', gameData.career_choices, 'career', selectCareer);
+  renderChoiceGrid('housing-choices', gameData.housing_choices, 'housing', sel => selectChoice('housing', sel, 'housing-next'));
+  renderChoiceGrid('debt-choices', gameData.debt_choices, 'debt', sel => selectChoice('debt', sel, 'debt-next'));
+  renderChoiceGrid('lifestyle-choices', gameData.lifestyle_choices, 'lifestyle', sel => selectChoice('lifestyle', sel, 'lifestyle-next'));
+  renderChoiceGrid('emergency-choices', gameData.emergency_choices, 'emergency', sel => selectChoice('emergency', sel, 'emergency-next'));
+}
+
+function renderChoiceGrid(containerId, choices, type, onClick) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = choices.map(c => `
+    <div class="choice-card" id="choice-${type}-${c.id}" onclick="(${onClick.toString()})('${c.id}')">
+      <div class="selected-mark">✓</div>
+      ${c.icon ? `<span class="card-icon">${c.icon}</span>` : ''}
+      <div class="card-name">${c.title}</div>
+      <div class="card-desc">${c.desc}</div>
+      <div class="tags">${(c.tags || []).map(([l, t]) => `<span class="tag tag-${t}">${l}</span>`).join('')}</div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// MODE SELECTION
+// ═══════════════════════════════════════════════════════
+
+function startStandard() {
+  gameMode = 'standard';
+  selections = {};
+  show('screen-character');
+  // Pre-fill random name suggestion
+  const fn = gameData.first_names ? gameData.first_names[Math.floor(Math.random() * gameData.first_names.length)] : '';
+  const ln = gameData.last_names ? gameData.last_names[Math.floor(Math.random() * gameData.last_names.length)] : '';
+  document.getElementById('char-first-name').value = fn;
+  document.getElementById('char-last-name').value = ln;
+  document.getElementById('char-hometown').value = gameData.hometowns[Math.floor(Math.random() * gameData.hometowns.length)];
+}
+
+async function startRandom() {
+  gameMode = 'random';
+  selections = {};
+  showLoading('Generating your character…');
+  const resp = await fetch('/api/generate-character', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({mode: 'random'}) });
+  const data = await resp.json();
+  charData = data;
+  selections.background = data.background.id;
+  
+  hideLoading();
+  document.getElementById('random-mode-label').textContent = 'Random Life — Your Character';
+  document.getElementById('random-char-name').textContent = data.name;
+  document.getElementById('random-char-meta').textContent = data.hometown + ' · ' + data.background.label;
+  document.getElementById('random-char-backstory').textContent = data.backstory;
+  document.getElementById('random-bg-display').textContent = data.background.desc;
+  show('screen-random-reveal');
+}
+
+async function startBeatGemini() {
+  gameMode = 'beat_gemini';
+  selections = {};
+  showLoading('Setting up your challenge…');
+  const resp = await fetch('/api/generate-character', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({mode: 'beat_gemini'}) });
+  const data = await resp.json();
+  charData = data;
+  selections.background = data.background.id;
+  
+  hideLoading();
+  document.getElementById('random-mode-label').textContent = 'Beat Gemini — Same Scenario';
+  document.getElementById('random-char-name').textContent = data.name;
+  document.getElementById('random-char-meta').textContent = data.hometown + ' · ' + data.background.label;
+  document.getElementById('random-char-backstory').textContent = data.backstory;
+  document.getElementById('random-bg-display').textContent = data.background.desc;
+  show('screen-random-reveal');
+}
+
+function proceedFromRandom() {
+  renderPostHSChoices();
+  show('screen-post-hs');
+}
+
+// ═══════════════════════════════════════════════════════
+// CHARACTER CREATION
+// ═══════════════════════════════════════════════════════
+
+function selectBG(bgId) {
+  selections.background = bgId;
+  document.querySelectorAll('#bg-choices .choice-card').forEach(c => c.classList.remove('selected'));
+  document.querySelector(`[data-choice-id="${bgId}"]`).classList.add('selected');
+  
+  const bg = gameData.backgrounds.find(b => b.id === bgId);
+  charData.background = bg;
+  checkCharReady();
+  generateBackstory();
+}
+
+function checkCharReady() {
+  const firstName = document.getElementById('char-first-name').value.trim();
+  const lastName = document.getElementById('char-last-name').value.trim();
+  const hometown = document.getElementById('char-hometown').value;
+  const bgSelected = !!selections.background;
+  document.getElementById('char-next-btn').disabled = !(firstName && lastName && hometown && bgSelected);
+}
+
+async function generateBackstory() {
+  const name = document.getElementById('char-first-name').value.trim() + ' ' + document.getElementById('char-last-name').value.trim();
+  const hometown = document.getElementById('char-hometown').value;
+  if (!name.trim() || !hometown || !selections.background) return;
+  
+  document.getElementById('backstory-container').style.display = 'block';
+  document.getElementById('backstory-text').textContent = 'Crafting your story…';
+  
+  const resp = await fetch('/api/generate-backstory', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ name, hometown, background_id: selections.background })
+  });
+  const data = await resp.json();
+  document.getElementById('backstory-text').textContent = data.backstory;
+  charData.backstory = data.backstory;
+}
+
+// ─── Listen for name/hometown changes
+document.addEventListener('DOMContentLoaded', () => {
+  ['char-first-name', 'char-last-name', 'char-hometown'].forEach(id => {
+    document.getElementById(id).addEventListener('input', checkCharReady);
+    document.getElementById(id).addEventListener('change', checkCharReady);
+  });
+  init();
+});
+
+function goToPostHS() {
+  const firstName = document.getElementById('char-first-name').value.trim();
+  const lastName = document.getElementById('char-last-name').value.trim();
+  charData.name = firstName + ' ' + lastName;
+  charData.hometown = document.getElementById('char-hometown').value;
+  renderPostHSChoices();
+  show('screen-post-hs');
+}
+
+// ═══════════════════════════════════════════════════════
+// CHAPTER NAVIGATION
+// ═══════════════════════════════════════════════════════
+
+const TOTAL_CHAPTERS = 6;
+
+function updateDots(dotContainerId, labelId, activeChapter) {
+  const container = document.getElementById(dotContainerId);
+  if (!container) return;
+  container.innerHTML = Array.from({length: TOTAL_CHAPTERS}, (_, i) => 
+    `<div class="step-dot ${i < activeChapter ? 'done' : i === activeChapter ? 'active' : ''}"></div>`
+  ).join('');
+  const label = document.getElementById(labelId);
+  if (label) label.textContent = `Chapter ${activeChapter + 1} of ${TOTAL_CHAPTERS}`;
+}
+
+function renderPostHSChoices() {
+  updateDots('chapter-dots', 'chapter-progress-label', 0);
+  document.getElementById('chapter-age-label').textContent = 'Age 18';
+  
+  const container = document.getElementById('post-hs-choices');
+  container.innerHTML = gameData.post_hs_choices.map(c => `
+    <div class="choice-card ${selections.post_hs === c.id ? 'selected' : ''}" onclick="selectPostHS('${c.id}')">
+      <div class="selected-mark">✓</div>
+      <span class="card-icon">${c.icon}</span>
+      <div class="card-name">${c.title}</div>
+      <div class="card-desc">${c.desc}</div>
+      <div class="tags">${(c.tags || []).map(([l, t]) => `<span class="tag tag-${t}">${l}</span>`).join('')}</div>
+    </div>
+  `).join('');
+  document.getElementById('post-hs-next').disabled = !selections.post_hs;
+}
+
+function selectPostHS(id) {
+  selections.post_hs = id;
+  renderPostHSChoices();
+}
+
+function postHSBack() {
+  if (gameMode === 'standard') show('screen-character');
+  else show('screen-random-reveal');
+}
+
+function goToCareer() {
+  const postHS = gameData.post_hs_choices.find(c => c.id === selections.post_hs);
+  const baseAge = 18 + postHS.years;
+  
+  updateDots('career-dots', 'career-progress-label', 1);
+  document.getElementById('career-age-label').textContent = `Age ${baseAge}`;
+  document.getElementById('career-eyebrow').textContent = `Chapter 2 · Age ${baseAge}`;
+  document.getElementById('career-title').textContent = postHS.has_college ? 
+    "The diploma's in hand. Now what?" : "It's time to level up.";
+  document.getElementById('career-story').textContent = postHS.has_college ?
+    `You've finished ${postHS.title.toLowerCase()}. Now the job market awaits. Your choices have given you certain options — but not all doors are open equally.` :
+    `You've been building skills and earning money. Now it's time to find your career path — the work that will define the next decade.`;
+  
+  // Filter career choices based on post-hs path
+  const availableCareers = gameData.career_choices.filter(c => 
+    !c.requires_college || postHS.has_college
+  );
+  
+  const container = document.getElementById('career-choices');
+  container.innerHTML = availableCareers.map(c => `
+    <div class="choice-card ${selections.career === c.id ? 'selected' : ''}" onclick="selectCareer('${c.id}')">
+      <div class="selected-mark">✓</div>
+      <span class="card-icon">${c.icon}</span>
+      <div class="card-name">${c.title}</div>
+      <div class="card-desc">${c.desc}</div>
+      <div class="tags">${(c.tags || []).map(([l, t]) => `<span class="tag tag-${t}">${l}</span>`).join('')}</div>
+    </div>
+  `).join('');
+  document.getElementById('career-next').disabled = !selections.career;
+  
+  show('screen-career');
+}
+
+function selectCareer(id) {
+  selections.career = id;
+  document.querySelectorAll('#career-choices .choice-card').forEach(c => c.classList.remove('selected'));
+  const card = document.querySelector(`#career-choices .choice-card[onclick*="${id}"]`);
+  if (card) card.classList.add('selected');
+  document.getElementById('career-next').disabled = false;
+}
+
+function goToHousing() {
+  const postHS = gameData.post_hs_choices.find(c => c.id === selections.post_hs);
+  const baseAge = 18 + postHS.years + 1;
+  
+  updateDots('housing-dots', 'housing-progress-label', 2);
+  document.getElementById('housing-age').textContent = baseAge;
+  
+  const container = document.getElementById('housing-choices');
+  container.innerHTML = gameData.housing_choices.map(c => `
+    <div class="choice-card ${selections.housing === c.id ? 'selected' : ''}" onclick="selectChoiceAndRender('housing', '${c.id}', 'housing-choices', 'housing-next')">
+      <div class="selected-mark">✓</div>
+      <span class="card-icon">${c.icon}</span>
+      <div class="card-name">${c.title}</div>
+      <div class="card-desc">${c.desc}</div>
+      <div class="tags">${(c.tags || []).map(([l, t]) => `<span class="tag tag-${t}">${l}</span>`).join('')}</div>
+    </div>
+  `).join('');
+  document.getElementById('housing-next').disabled = !selections.housing;
+  
+  show('screen-housing');
+}
+
+function goToDebt() {
+  const postHS = gameData.post_hs_choices.find(c => c.id === selections.post_hs);
+  const baseAge = 18 + postHS.years + 2;
+  const hasDebt = postHS.debt_base > 0;
+  
+  updateDots('debt-dots', 'debt-progress-label', 3);
+  document.getElementById('debt-age').textContent = baseAge;
+  document.getElementById('debt-title').textContent = hasDebt ? 
+    'The weight of the loans' : 'Building Your Financial Foundation';
+  document.getElementById('debt-story').textContent = hasDebt ?
+    `Your student loan grace period just ended. $${Math.round(postHS.debt_base/1000)}K is staring you down. How do you tackle it?` :
+    `You started without debt — a real advantage. Now it's about building financial habits that compound over the next decade.`;
+  
+  const container = document.getElementById('debt-choices');
+  container.innerHTML = gameData.debt_choices.map(c => `
+    <div class="choice-card ${selections.debt === c.id ? 'selected' : ''}" onclick="selectChoiceAndRender('debt', '${c.id}', 'debt-choices', 'debt-next')">
+      <div class="selected-mark">✓</div>
+      <span class="card-icon">${c.icon}</span>
+      <div class="card-name">${c.title}</div>
+      <div class="card-desc">${c.desc}</div>
+      <div class="tags">${(c.tags || []).map(([l, t]) => `<span class="tag tag-${t}">${l}</span>`).join('')}</div>
+    </div>
+  `).join('');
+  document.getElementById('debt-next').disabled = !selections.debt;
+  
+  show('screen-debt');
+}
+
+function goToLifestyle() {
+  const postHS = gameData.post_hs_choices.find(c => c.id === selections.post_hs);
+  const baseAge = 18 + postHS.years + 4;
+  
+  updateDots('lifestyle-dots', 'lifestyle-progress-label', 4);
+  document.getElementById('lifestyle-age').textContent = baseAge;
+  
+  const container = document.getElementById('lifestyle-choices');
+  container.innerHTML = gameData.lifestyle_choices.map(c => `
+    <div class="choice-card ${selections.lifestyle === c.id ? 'selected' : ''}" onclick="selectChoiceAndRender('lifestyle', '${c.id}', 'lifestyle-choices', 'lifestyle-next')">
+      <div class="selected-mark">✓</div>
+      <span class="card-icon">${c.icon}</span>
+      <div class="card-name">${c.title}</div>
+      <div class="card-desc">${c.desc}</div>
+      <div class="tags">${(c.tags || []).map(([l, t]) => `<span class="tag tag-${t}">${l}</span>`).join('')}</div>
+    </div>
+  `).join('');
+  document.getElementById('lifestyle-next').disabled = !selections.lifestyle;
+  
+  show('screen-lifestyle');
+}
+
+function goToEmergency() {
+  updateDots('emergency-dots', 'emergency-progress-label', 5);
+  
+  const container = document.getElementById('emergency-choices');
+  container.innerHTML = gameData.emergency_choices.map(c => `
+    <div class="choice-card ${selections.emergency === c.id ? 'selected' : ''}" onclick="selectChoiceAndRender('emergency', '${c.id}', 'emergency-choices', 'emergency-next')">
+      <div class="selected-mark">✓</div>
+      <span class="card-icon">${c.icon}</span>
+      <div class="card-name">${c.title}</div>
+      <div class="card-desc">${c.desc}</div>
+      <div class="tags">${(c.tags || []).map(([l, t]) => `<span class="tag tag-${t}">${l}</span>`).join('')}</div>
+    </div>
+  `).join('');
+  document.getElementById('emergency-next').disabled = !selections.emergency;
+  
+  show('screen-emergency');
+}
+
+function selectChoiceAndRender(type, id, containerId, nextBtnId) {
+  selections[type] = id;
+  document.querySelectorAll(`#${containerId} .choice-card`).forEach(c => c.classList.remove('selected'));
+  const cards = document.querySelectorAll(`#${containerId} .choice-card`);
+  cards.forEach(c => { if (c.getAttribute('onclick') && c.getAttribute('onclick').includes(id)) c.classList.add('selected'); });
+  document.getElementById(nextBtnId).disabled = false;
+}
+
+function selectChoice(type, id, nextBtnId) {
+  selectChoiceAndRender(type, id, type + '-choices', nextBtnId);
+}
+
+// ═══════════════════════════════════════════════════════
+// COMPUTE & SHOW RESULTS
+// ═══════════════════════════════════════════════════════
+
+async function computeAndShow() {
+  showLoading('Generating your life story with Gemini AI…');
+  
+  // Generate scenarios
+  const scenarioResp = await fetch('/api/generate-scenarios', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      name: charData.name || 'Player',
+      background_id: selections.background,
+      post_hs_id: selections.post_hs,
+      career_id: selections.career
+    })
+  });
+  const scenarioData = await scenarioResp.json();
+  gameScenarios = scenarioData.scenarios;
+  
+  if (gameMode === 'beat_gemini') {
+    // Also get Gemini's choices
+    const geminiResp = await fetch('/api/generate-gemini-choices', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        char_profile: {
+          name: charData.name,
+          background: charData.background,
+          hometown: charData.hometown
+        }
+      })
+    });
+    geminiChoices = await geminiResp.json();
+    
+    // Compute Gemini's results
+    const geminiSelections = {
+      background: selections.background,
+      post_hs: geminiChoices.post_hs,
+      career: geminiChoices.career,
+      housing: geminiChoices.housing,
+      debt: geminiChoices.debt,
+      lifestyle: geminiChoices.lifestyle,
+      emergency: geminiChoices.emergency
+    };
+    
+    const geminiResultResp = await fetch('/api/compute-results', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ selections: geminiSelections, scenarios: gameScenarios })
+    });
+    geminiResult = await geminiResultResp.json();
+  }
+  
+  // Compute player results
+  const resultResp = await fetch('/api/compute-results', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ selections, scenarios: gameScenarios })
+  });
+  const result = await resultResp.json();
+  
+  hideLoading();
+  
+  if (gameMode === 'beat_gemini') {
+    buildBeatGeminiResults(result, geminiResult);
+  } else {
+    buildResults(result);
+  }
+}
+
+function buildResults(r) {
+  const score = r.score;
+  const isGood = score >= 65, isMid = score >= 45;
+  const name = charData.name || 'You';
+  
+  document.getElementById('results-headline').textContent = `${name} at 37: Your snapshot`;
+  
+  const dial = document.getElementById('score-dial');
+  dial.className = 'score-dial ' + (isGood ? 'green' : isMid ? 'amber' : 'red');
+  document.getElementById('score-num').textContent = score;
+  document.getElementById('score-text-title').textContent = isGood ? '💪 Strong Financial Foundation' : isMid ? '📊 Steady Progress' : '🔄 Rebuilding';
+  document.getElementById('score-text-body').textContent = isGood ?
+    'Disciplined choices compounded into real wealth over two decades.' :
+    isMid ? 'Good instincts, a few costly tradeoffs. Still time to shift the trajectory.' :
+    'Life threw some curveballs and they hit hard. The story isn\'t over.';
+  
+  const oc = document.getElementById('outcome-card');
+  oc.className = 'outcome-card ' + (isGood ? 'good' : isMid ? 'mid' : 'bad');
+  const nwStr = fmt(r.final_nw);
+  document.getElementById('outcome-title').textContent = isGood ? '🏆 Strong foundation built' : isMid ? '📈 Steady progress, room to grow' : '🔄 Rebuilding is always possible';
+  document.getElementById('outcome-body').textContent = `Net worth ${nwStr} · Salary $${Math.round(r.final_salary/1000)}K/yr. ` +
+    (isGood ? 'Your mid-20s decisions unlocked serious compound growth.' :
+    isMid ? 'Small adjustments in debt or savings rate could shift this significantly.' :
+    'Changing your savings rate by even 5% dramatically shifts the trajectory from here.');
+  
+  document.getElementById('metrics-grid').innerHTML = [
+    ['Net Worth', nwStr, 'at age 37'],
+    ['Annual Salary', `$${Math.round(r.final_salary/1000)}K`, 'after 20 yrs'],
+    ['Debt-Free', `Age ${r.debt_free_age}`, 'student loans'],
+    ['Savings Rate', `${Math.round(r.savings_rate * 100)}%`, 'of income'],
+  ].map(([l, v, s]) => `
+    <div class="metric-card">
+      <div class="metric-label">${l}</div>
+      <div class="metric-value">${v}</div>
+      <div class="metric-sub">${s}</div>
+    </div>
+  `).join('');
+  
+  document.getElementById('events-list').innerHTML = r.events.map(e => `
+    <div class="event-item">
+      <div class="event-age">Age ${e.age}</div>
+      <div class="event-icon">${e.icon}</div>
+      <div class="event-text">${e.text}</div>
+    </div>
+  `).join('');
+  
+  // AI Scenarios display
+  if (gameScenarios && gameScenarios.length > 0) {
+    const scenariosEl = document.getElementById('scenarios-display');
+    const topScenarios = gameScenarios.slice(0, 4);
+    scenariosEl.innerHTML = topScenarios.map(s => {
+      const isPos = s.impact_type && s.impact_type.includes('gain') || s.impact_type === 'monthly_income_boost';
+      const isNeg = s.impact_type && (s.impact_type.includes('loss') || s.impact_type === 'monthly_expense');
+      const cls = isPos ? 'positive' : isNeg ? 'negative' : 'neutral';
+      const impactLabel = isPos ? `+$${s.financial_impact.toLocaleString()}` : isNeg ? `-$${s.financial_impact.toLocaleString()}` : '~';
+      return `
+        <div class="scenario-card ${cls}">
+          <span class="scenario-emoji">${s.emoji || '📌'}</span>
+          <div class="scenario-title">Age ${s.age}: ${s.title}</div>
+          <div class="scenario-story">${s.story}</div>
+          <span class="scenario-impact ${cls}">${impactLabel} financial impact</span>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  document.getElementById('insights-grid').innerHTML = [
+    ['What helped most', 'green', topInsight(r)],
+    ['What hurt most', 'red', worstInsight(r)],
+    ['What to change', 'blue', adviceInsight(r)],
+    ['The compound effect', 'amber', 'Every extra $100/mo saved in your early 20s becomes ~$5,800 by age 37 at 7% return. Your choices determined how much of that potential you captured.'],
+  ].map(([l, c, b]) => `
+    <div class="insight-card">
+      <div class="insight-label ${c}">${l}</div>
+      <div class="insight-body">${b}</div>
+    </div>
+  `).join('');
+  
+  buildChart(r.net_worth_by_year, 'nw-chart');
+  
+  // Show score entry for standard mode
+  if (gameMode === 'standard') {
+    document.getElementById('score-entry-wrap').style.display = 'block';
+    document.getElementById('score-name-input').value = charData.name || '';
+  } else {
+    document.getElementById('score-entry-wrap').style.display = 'none';
+  }
+  
+  window._lastResult = r;
+  show('screen-results');
+}
+
+function buildBeatGeminiResults(playerResult, geminiResult) {
+  const playerWon = playerResult.score >= geminiResult.score;
+  
+  document.getElementById('bg-headline').textContent = playerWon ? '🏆 You Beat Gemini!' : '🤖 Gemini Wins This Round';
+  
+  const playerCard = document.getElementById('player-compare-card');
+  const geminiCard = document.getElementById('gemini-compare-card');
+  
+  if (playerWon) {
+    playerCard.className = 'compare-card winner';
+    geminiCard.className = 'compare-card';
+    document.getElementById('bg-player-badge').textContent = '🏆 WINNER';
+    document.getElementById('bg-player-badge').style.display = 'inline-block';
+  } else {
+    geminiCard.className = 'compare-card winner-sage';
+    playerCard.className = 'compare-card';
+    document.getElementById('bg-gemini-badge').textContent = '🤖 WINNER';
+    document.getElementById('bg-gemini-badge').style.display = 'inline-block';
+  }
+  
+  document.getElementById('bg-player-score').textContent = playerResult.score;
+  document.getElementById('bg-player-nw').textContent = 'Net Worth: ' + fmt(playerResult.final_nw);
+  document.getElementById('bg-gemini-score').textContent = geminiResult.score;
+  document.getElementById('bg-gemini-nw').textContent = 'Net Worth: ' + fmt(geminiResult.final_nw);
+  
+  document.getElementById('gemini-reasoning-text').textContent = geminiChoices.reasoning || 'Gemini optimized for maximum compound growth through strategic choices.';
+  
+  // Choices comparison
+  const choiceLabels = {
+    post_hs: 'Post-High School',
+    career: 'Career',
+    housing: 'Housing',
+    debt: 'Debt Strategy',
+    lifestyle: 'Lifestyle',
+    emergency: 'Emergency'
+  };
+  
+  const choiceSources = {
+    post_hs: gameData.post_hs_choices,
+    career: gameData.career_choices,
+    housing: gameData.housing_choices,
+    debt: gameData.debt_choices,
+    lifestyle: gameData.lifestyle_choices,
+    emergency: gameData.emergency_choices
+  };
+  
+  document.getElementById('choices-compare').innerHTML = Object.entries(choiceLabels).map(([key, label]) => {
+    const playerChoice = (choiceSources[key] || []).find(c => c.id === selections[key]);
+    const geminiChoice = (choiceSources[key] || []).find(c => c.id === geminiChoices[key]);
+    return `
+      <div style="display:grid; grid-template-columns: 100px 1fr 1fr; gap:8px; align-items:center; margin-bottom:10px; font-size:13px;">
+        <div style="color:var(--ink3); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.06em;">${label}</div>
+        <div style="background:white; border:1px solid var(--border); border-radius:8px; padding:8px 12px;">
+          <span style="font-size:10px; color:var(--ink3); display:block; margin-bottom:2px;">You</span>
+          ${playerChoice ? playerChoice.icon + ' ' + playerChoice.title : '—'}
+        </div>
+        <div style="background:var(--sky-light); border:1px solid rgba(43,108,176,0.2); border-radius:8px; padding:8px 12px;">
+          <span style="font-size:10px; color:var(--sky); display:block; margin-bottom:2px;">Gemini</span>
+          ${geminiChoice ? geminiChoice.icon + ' ' + geminiChoice.title : '—'}
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  // Show player's detailed results below
+  const playerResultsContainer = document.getElementById('bg-player-results');
+  playerResultsContainer.innerHTML = `
+    <p class="section-title">Your Full Results</p>
+    <div class="metrics-grid">
+      ${[
+        ['Net Worth', fmt(playerResult.final_nw), 'at age 37'],
+        ['Salary', `$${Math.round(playerResult.final_salary/1000)}K`, 'annual'],
+        ['Savings Rate', `${Math.round(playerResult.savings_rate * 100)}%`, 'of income'],
+        ['Score', playerResult.score + '/99', 'final']
+      ].map(([l,v,s]) => `<div class="metric-card"><div class="metric-label">${l}</div><div class="metric-value">${v}</div><div class="metric-sub">${s}</div></div>`).join('')}
+    </div>
+  `;
+  
+  show('screen-beat-gemini');
+}
+
+function buildChart(nwByYear, canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  if (chartInstance) chartInstance.destroy();
+  
+  const labels = nwByYear.map(d => `Age ${d.age}`);
+  const values = nwByYear.map(d => d.nw);
+  const finalNW = values[values.length - 1];
+  const lineColor = finalNW >= 0 ? '#4A7C59' : '#C4534A';
+  const fillColor = finalNW >= 0 ? 'rgba(74,124,89,0.08)' : 'rgba(196,83,74,0.08)';
+  
+  chartInstance = new Chart(canvas.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        borderColor: lineColor,
+        backgroundColor: fillColor,
+        borderWidth: 2.5,
+        pointRadius: 2,
+        pointBackgroundColor: lineColor,
+        fill: true,
+        tension: 0.4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${fmt(ctx.raw)}` } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 }, maxTicksLimit: 8, color: '#8A836E' }},
+        y: { grid: { color: 'rgba(28,26,20,0.05)' }, ticks: { font: { size: 11 }, callback: v => fmt(v), color: '#8A836E' }}
+      }
+    }
+  });
+}
+
+// ─── Insights ───────────────────────────────────────────
+function topInsight(r) {
+  if (selections.career === 'bigtech' || selections.career === 'healthcare') return `Your high starting salary accelerated compound growth from day one — the single biggest lever in the simulation.`;
+  if (['family','rent_cheap'].includes(selections.housing)) return 'Low housing costs freed up capital that compounded significantly over 20 years.';
+  if (selections.lifestyle === 'invest_first') return 'Investing most of your raise before lifestyle inflated was the highest-leverage mid-career decision.';
+  if (selections.post_hs === 'work_immediately') return 'Starting to earn and invest immediately — with zero debt — gave you a meaningful head start.';
+  return 'Staying disciplined through multiple life transitions maintained steady savings momentum.';
+}
+
+function worstInsight(r) {
+  if (selections.emergency === 'withdraw_401k') return 'Withdrawing from your 401k cost both the penalty/tax and years of future compound growth.';
+  if (selections.emergency === 'credit') return 'High-interest credit card debt during the emergency erased months of savings progress.';
+  if (selections.lifestyle === 'lifestyle_up') return 'Upgrading lifestyle after your raise locked in high fixed costs before your savings base was solid.';
+  if (selections.housing === 'rent_city') return 'City rent consumed a large income share, limiting investment during your prime compounding years.';
+  return 'Without a tight savings strategy, small spending decisions gradually eroded your savings rate.';
+}
+
+function adviceInsight(r) {
+  if (r.final_nw < 50000) return "Try maxing your 401k first — the tax break improves outcomes and forces savings discipline automatically.";
+  if (['credit','withdraw_401k'].includes(selections.emergency)) return "Build a 3-6 month emergency fund before aggressive investing. One crisis without a buffer can set you back years.";
+  if (selections.lifestyle === 'lifestyle_up') return "Try 'pay yourself first': automate savings before you see the money so lifestyle spending is naturally constrained.";
+  return "You're on a solid path. Next: Roth IRA, HSA, and ensuring your allocation matches your time horizon.";
+}
+
+function fmt(n) {
+  return n >= 0 ? `$${Math.round(n / 1000)}K` : `-$${Math.round(Math.abs(n) / 1000)}K`;
+}
+
+// ═══════════════════════════════════════════════════════
+// HIGH SCORES
+// ═══════════════════════════════════════════════════════
+
+async function showHighScores() {
+  const resp = await fetch('/api/high-scores');
+  const scores = await resp.json();
+  
+  const container = document.getElementById('scores-table-wrap');
+  if (scores.length === 0) {
+    container.innerHTML = '<p style="color:var(--ink3); font-size:14px; text-align:center; padding:2rem;">No high scores yet. Play Standard mode to get on the board!</p>';
+  } else {
+    container.innerHTML = `
+      <table class="scores-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Score</th>
+            <th>Net Worth</th>
+            <th>Mode</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${scores.map((s, i) => `
+            <tr>
+              <td><div class="rank-badge ${i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : ''}">${i + 1}</div></td>
+              <td style="font-weight:600;">${s.name}</td>
+              <td style="font-family:var(--font-display); font-size:1.1rem; font-weight:700;">${s.score}<span style="font-size:12px; color:var(--ink3); font-family:var(--font-body);">/99</span></td>
+              <td>${fmt(s.net_worth)}</td>
+              <td><span class="mode-pill ${s.mode}">${s.mode.replace('_', ' ')}</span></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+  
+  show('screen-highscores');
+}
+
+async function submitHighScore() {
+  const name = document.getElementById('score-name-input').value.trim();
+  if (!name) return;
+  const r = window._lastResult;
+  if (!r) return;
+  
+  await fetch('/api/high-scores', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ name, score: r.score, net_worth: r.final_nw, mode: gameMode })
+  });
+  
+  document.getElementById('score-saved-msg').style.display = 'inline';
+  showToast('Score saved to leaderboard! 🏆');
+}
+
+// ═══════════════════════════════════════════════════════
+// UTILITY
+// ═══════════════════════════════════════════════════════
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showLoading(msg) {
+  document.getElementById('loading-message').textContent = msg || 'Loading…';
+  document.getElementById('loading-overlay').classList.add('active');
+}
+
+function hideLoading() {
+  document.getElementById('loading-overlay').classList.remove('active');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function restartGame() {
+  selections = {};
+  charData = {};
+  gameScenarios = [];
+  geminiChoices = null;
+  geminiResult = null;
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+  document.getElementById('score-saved-msg').style.display = 'none';
+  show('screen-intro');
+}
+
+function shareResults() {
+  const r = window._lastResult;
+  if (!r) return;
+  const name = charData.name || 'I';
+  const text = `${name} just played Life Simulator! Net worth at 37: ${fmt(r.final_nw)} · Score: ${r.score}/99 🎓`;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      document.getElementById('share-msg').style.display = 'inline';
+      showToast('Copied to clipboard! 📋');
+      setTimeout(() => document.getElementById('share-msg').style.display = 'none', 2500);
+    });
+  }
+}
+</script>
+</body>
+</html>

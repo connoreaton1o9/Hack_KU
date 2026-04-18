@@ -1,0 +1,847 @@
+#!/usr/bin/env python3
+"""
+Life Simulator — Interactive Financial Planning Game
+Starting at high school graduation, with college optional.
+Modes: Standard, Random, Beat Gemini
+"""
+
+import json
+import os
+import random
+import math
+import time
+import requests
+from flask import Flask, render_template, jsonify, request, send_from_directory
+
+app = Flask(__name__, template_folder=".", static_folder="static")
+
+GEMINI_API_KEY = "AIzaSyBemhMWACYs1z3pzaxX7r53Gf3E65-yvBQ"
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
+HIGH_SCORES_FILE = "high_scores.json"
+
+def load_high_scores():
+    if os.path.exists(HIGH_SCORES_FILE):
+        try:
+            with open(HIGH_SCORES_FILE, "r") as f:
+                return json.load(f)
+        except:
+            pass
+    return []
+
+def save_high_scores(scores):
+    with open(HIGH_SCORES_FILE, "w") as f:
+        json.dump(scores, f, indent=2)
+
+def add_high_score(name, score, net_worth, mode):
+    scores = load_high_scores()
+    scores.append({
+        "name": name,
+        "score": score,
+        "net_worth": net_worth,
+        "mode": mode,
+        "timestamp": int(time.time())
+    })
+    scores.sort(key=lambda x: x["score"], reverse=True)
+    scores = scores[:20]  # top 20
+    save_high_scores(scores)
+    return scores
+
+def call_gemini(prompt, max_tokens=2000):
+    """Call Gemini API with the given prompt."""
+    try:
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"maxOutputTokens": max_tokens, "temperature": 0.9}
+        }
+        resp = requests.post(GEMINI_URL, json=payload, timeout=30)
+        data = resp.json()
+        if "candidates" in data and data["candidates"]:
+            return data["candidates"][0]["content"]["parts"][0]["text"]
+        return None
+    except Exception as e:
+        print(f"Gemini error: {e}")
+        return None
+
+# ─── GAME DATA ─────────────────────────────────────────────────────────────────
+
+FIRST_NAMES = [
+    "Alex", "Jordan", "Casey", "Morgan", "Riley", "Avery", "Quinn", "Skyler",
+    "Devon", "Cameron", "Peyton", "Taylor", "Reese", "Blake", "Drew", "Jamie",
+    "Parker", "Logan", "Finley", "Rowan", "Emery", "Harper", "Elliot", "Sage"
+]
+
+LAST_NAMES = [
+    "Rivera", "Chen", "Patel", "Johnson", "Williams", "Kim", "Martinez",
+    "Thompson", "Garcia", "Davis", "Wilson", "Anderson", "Taylor", "Harris",
+    "Jackson", "White", "Lewis", "Robinson", "Walker", "Hall"
+]
+
+HOMETOWNS = [
+    "Cedar Falls, Iowa", "Tucson, Arizona", "Raleigh, North Carolina",
+    "Spokane, Washington", "Baton Rouge, Louisiana", "Akron, Ohio",
+    "El Paso, Texas", "Fresno, California", "Omaha, Nebraska",
+    "Richmond, Virginia", "Albuquerque, New Mexico", "Lubbock, Texas",
+    "Knoxville, Tennessee", "Boise, Idaho", "Greensboro, North Carolina"
+]
+
+FAMILY_BACKGROUNDS = [
+    {
+        "id": "working_class",
+        "label": "Working Class",
+        "desc": "Your parents work hard every day. No college savings fund, but you've learned the value of a dollar. First-generation college student if you go.",
+        "debt_modifier": 1.3,
+        "resilience_bonus": 0.05,
+        "starting_savings": 800
+    },
+    {
+        "id": "middle_class",
+        "label": "Middle Class",
+        "desc": "Comfortable but not wealthy. Your parents helped a little with applications. Some college savings, but you'll still need loans.",
+        "debt_modifier": 1.0,
+        "resilience_bonus": 0.0,
+        "starting_savings": 2500
+    },
+    {
+        "id": "upper_middle",
+        "label": "Upper-Middle Class",
+        "desc": "Your parents are professionals. Good neighborhood, good schools. They can cover some college costs — but expect you to stand on your own eventually.",
+        "debt_modifier": 0.6,
+        "resilience_bonus": -0.02,
+        "starting_savings": 8000
+    },
+    {
+        "id": "challenging",
+        "label": "Challenging Circumstances",
+        "desc": "Life hasn't been easy. You've worked since you were 14. You might be supporting family too. But hardship has made you scrappy and resourceful.",
+        "debt_modifier": 1.5,
+        "resilience_bonus": 0.08,
+        "starting_savings": 200
+    }
+]
+
+POST_HS_CHOICES = [
+    {
+        "id": "four_year",
+        "icon": "🎓",
+        "title": "4-Year University",
+        "desc": "The traditional path. Take on loans, earn a degree, unlock higher-earning careers. Big investment in your future.",
+        "tags": [["credentials", "blue"], ["debt risk", "red"], ["ceiling↑", "green"]],
+        "debt_base": 38000,
+        "years": 4,
+        "salary_base": 58000,
+        "salary_growth_bonus": 0.03,
+        "has_college": True
+    },
+    {
+        "id": "community_then_transfer",
+        "icon": "🏫",
+        "title": "Community College → Transfer",
+        "desc": "Start at community college for 2 years ($8K), transfer to state school. A smart, cost-effective path to a 4-year degree.",
+        "tags": [["smart savings", "green"], ["longer path", "amber"], ["degree", "blue"]],
+        "debt_base": 18000,
+        "years": 4,
+        "salary_base": 54000,
+        "salary_growth_bonus": 0.025,
+        "has_college": True
+    },
+    {
+        "id": "trade_school",
+        "icon": "🔧",
+        "title": "Trade / Vocational School",
+        "desc": "Electrician, plumber, HVAC, welding. 2 years, minimal debt, immediate solid income. More stable than people think.",
+        "tags": [["low debt", "green"], ["job security", "blue"], ["immediate income", "green"]],
+        "debt_base": 8000,
+        "years": 2,
+        "salary_base": 52000,
+        "salary_growth_bonus": 0.018,
+        "has_college": False
+    },
+    {
+        "id": "work_immediately",
+        "icon": "💼",
+        "title": "Enter the Workforce",
+        "desc": "Skip school entirely. Start earning now, avoid debt. Harder path to advancement without credentials, but you'll have a head start on savings.",
+        "tags": [["no debt", "green"], ["limited ceiling", "amber"], ["head start", "blue"]],
+        "debt_base": 0,
+        "years": 0,
+        "salary_base": 36000,
+        "salary_growth_bonus": 0.01,
+        "has_college": False
+    },
+    {
+        "id": "military",
+        "icon": "🎖️",
+        "title": "Military Service",
+        "desc": "Serve your country for 4 years. Free housing, food, training, GI Bill for college after. Demanding — but you'll come out ahead financially.",
+        "tags": [["GI Bill", "green"], ["discipline", "blue"], ["risk", "red"]],
+        "debt_base": 0,
+        "years": 4,
+        "salary_base": 42000,
+        "salary_growth_bonus": 0.022,
+        "has_college": True  # GI Bill = college after
+    }
+]
+
+CAREER_CHOICES = [
+    {
+        "id": "bigtech",
+        "icon": "💻",
+        "title": "Big Tech Job",
+        "desc": "$85–95K salary at a large tech company. High pressure, long hours, but strong comp and rapid career growth.",
+        "tags": [["income↑", "green"], ["stress↑", "red"], ["growth↑", "blue"]],
+        "salary": 90000,
+        "stress": 7,
+        "growth": 9,
+        "requires_college": True
+    },
+    {
+        "id": "nonprofit",
+        "icon": "🌱",
+        "title": "Nonprofit / Public Service",
+        "desc": "$42K at a mission-driven org. Meaningful work and PSLF loan forgiveness eligibility after 10 years.",
+        "tags": [["fulfillment↑", "green"], ["forgiveness", "blue"], ["income↓", "amber"]],
+        "salary": 42000,
+        "stress": 4,
+        "growth": 5,
+        "requires_college": False
+    },
+    {
+        "id": "startup",
+        "icon": "🚀",
+        "title": "Early-Stage Startup",
+        "desc": "$65K + equity. Risky but with real upside potential. 60% chance the company succeeds.",
+        "tags": [["equity", "green"], ["risk↑", "red"], ["learning↑", "blue"]],
+        "salary": 65000,
+        "stress": 8,
+        "growth": 8,
+        "requires_college": False
+    },
+    {
+        "id": "skilled_trade_career",
+        "icon": "🔧",
+        "title": "Master Your Trade",
+        "desc": "Run your own plumbing/electrical/HVAC business after years of experience. Great income ceiling for non-college paths.",
+        "tags": [["own boss", "green"], ["stable", "blue"], ["physical", "amber"]],
+        "salary": 58000,
+        "stress": 5,
+        "growth": 6,
+        "requires_college": False
+    },
+    {
+        "id": "sales",
+        "icon": "📊",
+        "title": "Sales / Real Estate",
+        "desc": "Commission-based. Base $45K + unlimited upside. High variance — great years and rough years.",
+        "tags": [["upside", "green"], ["variable income", "amber"], ["hustle", "blue"]],
+        "salary": 62000,
+        "stress": 6,
+        "growth": 7,
+        "requires_college": False
+    },
+    {
+        "id": "healthcare",
+        "icon": "🏥",
+        "title": "Healthcare Worker",
+        "desc": "Nursing, PA, or allied health. Strong demand, good pay, meaningful work. Requires specific schooling.",
+        "tags": [["job security", "green"], ["meaningful", "blue"], ["demanding", "red"]],
+        "salary": 72000,
+        "stress": 7,
+        "growth": 7,
+        "requires_college": True
+    }
+]
+
+HOUSING_CHOICES = [
+    {
+        "id": "rent_city",
+        "icon": "🏙️",
+        "title": "Rent in the City",
+        "desc": "$1,800/mo for a 1BR. Close to work and social life, but expensive.",
+        "tags": [["convenience", "blue"], ["high cost", "red"]],
+        "rent": 1800,
+        "savings_mod": -0.15,
+        "equity": 0
+    },
+    {
+        "id": "buy_house",
+        "icon": "🏠",
+        "title": "Buy with Roommate",
+        "desc": "Split a starter home. $2,200/mo mortgage total ($1,100 each). Builds equity but illiquid.",
+        "tags": [["equity", "green"], ["illiquid", "amber"], ["risk", "red"]],
+        "rent": 1100,
+        "savings_mod": 0.05,
+        "equity": 120000
+    },
+    {
+        "id": "rent_cheap",
+        "icon": "🏘️",
+        "title": "Cheap Suburban Rental",
+        "desc": "$950/mo with roommates. Long commute, but frees up significant monthly cash.",
+        "tags": [["savings↑", "green"], ["commute", "red"]],
+        "rent": 950,
+        "savings_mod": 0.20,
+        "equity": 0
+    },
+    {
+        "id": "family",
+        "icon": "👨‍👩‍👧",
+        "title": "Move Back Home",
+        "desc": "$300/mo to family. Maximum savings potential with some social tradeoffs.",
+        "tags": [["max savings", "green"], ["social↓", "amber"]],
+        "rent": 300,
+        "savings_mod": 0.35,
+        "equity": 0
+    }
+]
+
+DEBT_CHOICES = [
+    {
+        "id": "minimum",
+        "icon": "🐢",
+        "title": "Minimum Payments",
+        "desc": "Pay the minimum (~$380/mo). Keep cash free for investing and life. Loans paid off in ~10 years.",
+        "tags": [["cash flow", "green"], ["interest↑", "red"]],
+        "debt_payment": 380,
+        "debt_years": 10,
+        "invest_mod": 1.0
+    },
+    {
+        "id": "aggressive",
+        "icon": "💪",
+        "title": "Aggressive Payoff",
+        "desc": "Pay $1,200/mo. Debt-free in ~3 years, then redirect everything to investing.",
+        "tags": [["debt-free", "green"], ["cash-poor", "red"]],
+        "debt_payment": 1200,
+        "debt_years": 3,
+        "invest_mod": 0.4
+    },
+    {
+        "id": "refinance",
+        "icon": "🔄",
+        "title": "Refinance + Balance",
+        "desc": "Refinance to 4.5% rate, pay $600/mo. A middle path between speed and flexibility.",
+        "tags": [["lower rate", "green"], ["balanced", "blue"]],
+        "debt_payment": 600,
+        "debt_years": 7,
+        "invest_mod": 0.7
+    },
+    {
+        "id": "forgiveness",
+        "icon": "🎁",
+        "title": "Pursue Forgiveness",
+        "desc": "Income-driven plan (~$180/mo). Aim for PSLF if at nonprofit. Long game — potentially powerful.",
+        "tags": [["low payments", "green"], ["risky", "amber"], ["long term", "blue"]],
+        "debt_payment": 180,
+        "debt_years": 20,
+        "invest_mod": 1.2
+    }
+]
+
+LIFESTYLE_CHOICES = [
+    {
+        "id": "lifestyle_up",
+        "icon": "✈️",
+        "title": "Upgrade Your Lifestyle",
+        "desc": "New car, nicer apartment, travel twice a year. Enjoy the fruits of your hard work now.",
+        "tags": [["enjoyment", "green"], ["savings↓", "red"]],
+        "lifestyle_cost": 1500,
+        "savings_rate_boost": -0.03,
+        "side_income": 0
+    },
+    {
+        "id": "invest_first",
+        "icon": "📈",
+        "title": "Invest Most of the Raise",
+        "desc": "Keep lifestyle flat, funnel 80% of raise into index funds and max out 401k contributions.",
+        "tags": [["wealth↑", "green"], ["discipline", "blue"]],
+        "lifestyle_cost": 300,
+        "savings_rate_boost": 0.12,
+        "side_income": 0
+    },
+    {
+        "id": "balanced_life",
+        "icon": "⚖️",
+        "title": "Balance It Out",
+        "desc": "50/50 split: half the raise to lifestyle improvements, half to savings. A sustainable middle path.",
+        "tags": [["balance", "blue"], ["steady", "green"]],
+        "lifestyle_cost": 700,
+        "savings_rate_boost": 0.06,
+        "side_income": 0
+    },
+    {
+        "id": "side_hustle",
+        "icon": "💡",
+        "title": "Start a Side Hustle",
+        "desc": "Launch freelance work or a small business. Extra $15K/yr potential, but ~15 hrs/week.",
+        "tags": [["income+", "green"], ["time↓", "red"], ["optionality", "blue"]],
+        "lifestyle_cost": 400,
+        "savings_rate_boost": 0.15,
+        "side_income": 15000
+    }
+]
+
+EMERGENCY_CHOICES = [
+    {
+        "id": "prepared",
+        "icon": "🛡️",
+        "title": "Use the Emergency Fund",
+        "desc": "You have 6 months of expenses saved. Bridge the gap without touching investments.",
+        "tags": [["resilient", "green"], ["prepared", "blue"]],
+        "emergency_cost": 0,
+        "stress_event": False
+    },
+    {
+        "id": "credit",
+        "icon": "💳",
+        "title": "Put It on Credit Cards",
+        "desc": "Charge $8,000 at 22% APR. Takes 18 months to pay off. Significant but recoverable.",
+        "tags": [["quick fix", "amber"], ["debt+", "red"]],
+        "emergency_cost": 8000,
+        "stress_event": True
+    },
+    {
+        "id": "withdraw_401k",
+        "icon": "📉",
+        "title": "Withdraw from 401k",
+        "desc": "Pull $12K early. 10% penalty + income tax + lose years of compound growth.",
+        "tags": [["available", "amber"], ["costly", "red"], ["penalty", "red"]],
+        "emergency_cost": 16000,
+        "stress_event": True
+    },
+    {
+        "id": "family_loan",
+        "icon": "🤝",
+        "title": "Borrow from Family",
+        "desc": "Interest-free loan from family. Paid back over 2 years. Some relational tension.",
+        "tags": [["low cost", "green"], ["relational", "amber"]],
+        "emergency_cost": 2000,
+        "stress_event": False
+    }
+]
+
+# ─── GEMINI GENERATION ─────────────────────────────────────────────────────────
+
+def generate_all_scenarios(char_name, char_bg, post_hs_path, career_choice):
+    """Generate all AI content upfront to avoid rate limits during gameplay."""
+    
+    context = f"""
+Character: {char_name}
+Background: {char_bg['label']} - {char_bg['desc']}
+Post-high school path: {post_hs_path['title']} - {post_hs_path['desc']}
+Career: {career_choice['title']} - {career_choice['desc']}
+"""
+
+    prompt = f"""You are writing for an interactive financial planning game called "Life Simulator". 
+The player's character is:
+{context}
+
+Generate 15 annual life events (ages 18-32 roughly, one per year) that create emotional storytelling AND financial impact. 
+Each event should be personal, specific to this character, and feel real.
+
+Some should be positive (bonus, promotion, unexpected windfall, new relationship milestone), some negative (medical bill, car breakdown, recession impact, job change), some neutral but thought-provoking.
+
+IMPORTANT: Make them feel like a real person's life story, not generic financial advice. Include personal details, relationships, emotions.
+
+Respond with ONLY a JSON array, no markdown, no explanation:
+[
+  {{
+    "age": 19,
+    "title": "Short punchy title",
+    "story": "2-3 sentences describing what happened in first person or close third person. Make it vivid and personal.",
+    "financial_impact": 1500,
+    "impact_type": "one_time_gain",
+    "emoji": "🎉"
+  }}
+]
+
+impact_type options: "one_time_gain", "one_time_loss", "monthly_income_boost", "monthly_expense", "savings_rate_change", "investment_multiplier"
+financial_impact: positive number representing the magnitude (dollar amount or percentage * 100 for rates)
+
+Make it emotionally compelling! Ages should span 18-37 and vary the types of events."""
+
+    result = call_gemini(prompt, max_tokens=3000)
+    
+    scenarios = []
+    if result:
+        try:
+            # Strip any markdown fencing
+            clean = result.strip()
+            if clean.startswith("```"):
+                clean = clean[clean.find("["):clean.rfind("]")+1]
+            scenarios = json.loads(clean)
+        except Exception as e:
+            print(f"JSON parse error: {e}")
+            scenarios = []
+    
+    # Fallback scenarios if Gemini fails
+    if not scenarios:
+        scenarios = get_fallback_scenarios(char_name)
+    
+    return scenarios[:15]  # cap at 15
+
+
+def generate_gemini_choices(char_profile, all_choices):
+    """Have Gemini make all game choices at once for Beat Gemini mode."""
+    
+    prompt = f"""You are playing a financial planning game as an AI advisor. 
+Character profile: {json.dumps(char_profile, indent=2)}
+
+You must make the following decisions to maximize the character's financial score (net worth at age 37, savings rate, debt management).
+
+Available choices for each decision:
+
+POST HIGH SCHOOL PATH:
+{json.dumps([{"id": c["id"], "title": c["title"], "desc": c["desc"], "debt_base": c["debt_base"], "salary_base": c["salary_base"]} for c in POST_HS_CHOICES], indent=2)}
+
+CAREER:
+{json.dumps([{"id": c["id"], "title": c["title"], "desc": c["desc"], "salary": c["salary"], "growth": c["growth"]} for c in CAREER_CHOICES], indent=2)}
+
+HOUSING:
+{json.dumps([{"id": c["id"], "title": c["title"], "desc": c["desc"], "rent": c["rent"], "savings_mod": c["savings_mod"], "equity": c["equity"]} for c in HOUSING_CHOICES], indent=2)}
+
+DEBT STRATEGY (only relevant if character has debt):
+{json.dumps([{"id": c["id"], "title": c["title"], "desc": c["desc"], "debt_payment": c["debt_payment"], "debt_years": c["debt_years"], "invest_mod": c["invest_mod"]} for c in DEBT_CHOICES], indent=2)}
+
+LIFESTYLE:
+{json.dumps([{"id": c["id"], "title": c["title"], "desc": c["desc"], "savings_rate_boost": c["savings_rate_boost"], "side_income": c.get("side_income", 0)} for c in LIFESTYLE_CHOICES], indent=2)}
+
+EMERGENCY:
+{json.dumps([{"id": c["id"], "title": c["title"], "desc": c["desc"], "emergency_cost": c["emergency_cost"]} for c in EMERGENCY_CHOICES], indent=2)}
+
+Think strategically about long-term wealth building. Consider: compound interest, debt costs vs investment returns, housing equity, income growth.
+
+Respond with ONLY a JSON object:
+{{
+  "post_hs": "choice_id",
+  "career": "choice_id", 
+  "housing": "choice_id",
+  "debt": "choice_id",
+  "lifestyle": "choice_id",
+  "emergency": "choice_id",
+  "reasoning": "2-3 sentences explaining your overall strategy"
+}}"""
+
+    result = call_gemini(prompt, max_tokens=800)
+    
+    if result:
+        try:
+            clean = result.strip()
+            if clean.startswith("```"):
+                start = clean.find("{")
+                end = clean.rfind("}") + 1
+                clean = clean[start:end]
+            return json.loads(clean)
+        except Exception as e:
+            print(f"Gemini choices parse error: {e}")
+    
+    # Fallback: Gemini makes reasonable choices
+    return {
+        "post_hs": "four_year",
+        "career": "bigtech",
+        "housing": "rent_cheap",
+        "debt": "refinance",
+        "lifestyle": "invest_first",
+        "emergency": "prepared",
+        "reasoning": "Prioritizing high income, low housing costs, and disciplined investing for maximum compound growth."
+    }
+
+
+def generate_character_backstory(name, hometown, background):
+    """Generate a short personal backstory for emotional connection."""
+    prompt = f"""Write a SHORT (3-4 sentences) personal backstory for {name} from {hometown} 
+with a {background['label']} background: "{background['desc']}"
+
+Make it feel real and emotionally resonant. Mention one specific memory or detail that defines them.
+Write in second person ("You grew up..."). 
+Keep it under 80 words. No lists. Just a short paragraph."""
+    
+    result = call_gemini(prompt, max_tokens=200)
+    if result:
+        return result.strip()
+    return f"You grew up in {hometown}, shaped by your {background['label'].lower()} upbringing. Every dollar you've earned has taught you something about the world. Now, at 18, the whole future is open."
+
+
+def get_fallback_scenarios(char_name):
+    return [
+        {"age": 19, "title": "Unexpected Medical Bill", "story": f"{char_name} got a nasty infection that required a trip to urgent care. No insurance meant paying out of pocket.", "financial_impact": 1200, "impact_type": "one_time_loss", "emoji": "🏥"},
+        {"age": 20, "title": "Summer Job Bonus", "story": "The manager loved your work ethic and slipped you a cash bonus at the end of the summer.", "financial_impact": 800, "impact_type": "one_time_gain", "emoji": "💵"},
+        {"age": 21, "title": "Car Breakdown", "story": "Your old car finally gave out on the highway. You needed reliable transportation for work.", "financial_impact": 3000, "impact_type": "one_time_loss", "emoji": "🚗"},
+        {"age": 22, "title": "Freelance Gig", "story": "A friend connected you with a freelance project that turned into recurring monthly income.", "financial_impact": 500, "impact_type": "monthly_income_boost", "emoji": "💻"},
+        {"age": 23, "title": "Stock Market Dip", "story": "The market dropped 20% and you watched your early investments decline. You held firm.", "financial_impact": 80, "impact_type": "investment_multiplier", "emoji": "📉"},
+        {"age": 24, "title": "Promotion!", "story": "Your hard work paid off. Your boss called you in and offered a significant raise.", "financial_impact": 8000, "impact_type": "one_time_gain", "emoji": "🎉"},
+        {"age": 25, "title": "Lease Hike", "story": "Your landlord raised rent by $300/month. You had to decide whether to move or absorb the cost.", "financial_impact": 300, "impact_type": "monthly_expense", "emoji": "🏠"},
+        {"age": 26, "title": "Family Emergency", "story": "A family member needed financial help. You stepped up — because that's who you are.", "financial_impact": 4000, "impact_type": "one_time_loss", "emoji": "❤️"},
+        {"age": 27, "title": "Investment Win", "story": "That index fund you've been contributing to had a remarkable year. Your portfolio surged.", "financial_impact": 115, "impact_type": "investment_multiplier", "emoji": "📈"},
+        {"age": 28, "title": "Conference & Networking", "story": "You invested in a professional conference and landed a higher-paying consulting contract.", "financial_impact": 6000, "impact_type": "one_time_gain", "emoji": "🤝"},
+        {"age": 29, "title": "Tax Surprise", "story": "A freelance project meant you owed more taxes than expected. The IRS is unforgiving.", "financial_impact": 2200, "impact_type": "one_time_loss", "emoji": "📋"},
+        {"age": 30, "title": "Side Hustle Takeoff", "story": "That side project you've been building quietly started generating real, consistent revenue.", "financial_impact": 1000, "impact_type": "monthly_income_boost", "emoji": "🚀"},
+        {"age": 31, "title": "Market Recovery", "story": "After years of steady investing through ups and downs, compound interest began to really show.", "financial_impact": 112, "impact_type": "investment_multiplier", "emoji": "💹"},
+        {"age": 32, "title": "Apartment Flooding", "story": "A burst pipe damaged your belongings. Renters insurance covered some, but not all.", "financial_impact": 1800, "impact_type": "one_time_loss", "emoji": "🌊"},
+        {"age": 33, "title": "Industry Recognition", "story": "You were featured in an industry publication. New clients found you. Income jumped.", "financial_impact": 12000, "impact_type": "one_time_gain", "emoji": "⭐"},
+    ]
+
+
+# ─── SIMULATION ENGINE ─────────────────────────────────────────────────────────
+
+def compute_results(selections, scenarios=None):
+    """Compute financial results based on selections and AI scenarios."""
+    
+    post_hs = next(c for c in POST_HS_CHOICES if c["id"] == selections["post_hs"])
+    career = next(c for c in CAREER_CHOICES if c["id"] == selections["career"])
+    housing = next(c for c in HOUSING_CHOICES if c["id"] == selections["housing"])
+    debt = next(c for c in DEBT_CHOICES if c["id"] == selections["debt"])
+    lifestyle = next(c for c in LIFESTYLE_CHOICES if c["id"] == selections["lifestyle"])
+    emergency = next(c for c in EMERGENCY_CHOICES if c["id"] == selections["emergency"])
+    bg = next(b for b in FAMILY_BACKGROUNDS if b["id"] == selections.get("background", "middle_class"))
+    
+    # Starting values
+    student_debt = post_hs["debt_base"] * bg["debt_modifier"]
+    if selections["debt"] == "forgiveness" and selections["career"] == "nonprofit":
+        student_debt = 0
+    
+    base_age = 18 + post_hs["years"]  # age when career starts
+    salary = career["salary"] * (1 + post_hs.get("salary_growth_bonus", 0) * post_hs["years"])
+    salary_growth = career["growth"] * 0.01 + 0.02
+    side_income = lifestyle.get("side_income", 0)
+    
+    debt_payment = debt["debt_payment"] if student_debt > 0 else 0
+    debt_years = min(debt["debt_years"], 10) if student_debt > 0 else 0
+    invest_mod = debt["invest_mod"]
+    savings_boost = lifestyle["savings_rate_boost"]
+    savings_mod = housing["savings_mod"] + bg["resilience_bonus"]
+    emergency_cost = emergency["emergency_cost"]
+    house_equity = housing.get("equity", 0)
+    
+    savings_rate = max(0.03, min(0.45, 0.10 + savings_boost + savings_mod))
+    
+    # Simulation: 19 years from age 18 to 37
+    net_worth_by_year = []
+    investments = bg["starting_savings"]
+    remaining_debt = float(student_debt)
+    current_salary = float(salary) * 0.6  # lower during school/training years
+    
+    # Pre-career years (18 to base_age)
+    for age in range(18, base_age + 1):
+        nw = investments - remaining_debt
+        net_worth_by_year.append({"age": age, "nw": round(nw)})
+    
+    current_salary = float(salary)
+    
+    scenario_impacts = {}  # age -> financial impact
+    if scenarios:
+        for s in scenarios:
+            if "age" in s and "financial_impact" in s:
+                scenario_impacts[s["age"]] = s
+    
+    for yr in range(1, 38 - base_age + 1):
+        age = base_age + yr
+        if age > 37:
+            break
+        current_salary *= (1 + salary_growth)
+        annual_income = current_salary + side_income
+        annual_savings = annual_income * savings_rate * invest_mod
+        annual_debt_pay = debt_payment * 12 if yr <= debt_years else 0
+        remaining_debt = max(0, remaining_debt - annual_debt_pay)
+        investments = (investments + max(0, annual_savings)) * 1.07
+        
+        # Apply scenario impacts
+        if age in scenario_impacts:
+            sc = scenario_impacts[age]
+            impact = sc["financial_impact"]
+            itype = sc.get("impact_type", "one_time_loss")
+            if itype == "one_time_gain":
+                investments += impact
+            elif itype == "one_time_loss":
+                investments = max(0, investments - impact)
+            elif itype == "monthly_income_boost":
+                investments += impact * 12 * 0.6
+            elif itype == "monthly_expense":
+                investments = max(0, investments - impact * 12)
+            elif itype == "investment_multiplier":
+                investments *= (impact / 100)
+            elif itype == "savings_rate_change":
+                savings_rate = max(0.03, min(0.45, savings_rate + impact / 100))
+        
+        # Emergency event (around age 28-30)
+        if age == 28:
+            investments = max(0, investments - emergency_cost)
+        
+        equity_value = house_equity * (1 + 0.04 * yr) - house_equity if house_equity else 0
+        nw = investments - remaining_debt + equity_value
+        net_worth_by_year.append({"age": age, "nw": round(nw)})
+    
+    final_nw = net_worth_by_year[-1]["nw"] if net_worth_by_year else 0
+    final_salary = round(current_salary + side_income)
+    debt_free_age = base_age + debt_years if student_debt > 0 else base_age
+    
+    # Score calculation
+    score = 50
+    if final_nw > 300000: score += 25
+    elif final_nw > 150000: score += 15
+    elif final_nw > 50000: score += 5
+    elif final_nw < 0: score -= 25
+    if savings_rate > 0.20: score += 12
+    elif savings_rate > 0.15: score += 7
+    if emergency["stress_event"]: score -= 10
+    if selections["housing"] in ("buy_house", "family"): score += 5
+    if side_income > 0: score += 5
+    if bg["id"] == "working_class" and final_nw > 100000: score += 10  # bonus for overcoming obstacles
+    if bg["id"] == "challenging" and final_nw > 50000: score += 15
+    score = max(10, min(99, score))
+    
+    # Build events timeline
+    events = [
+        {"age": 18, "icon": "🎓", "text": f"High school graduation. Chose: {post_hs['title']}."},
+    ]
+    if post_hs["has_college"]:
+        events.append({"age": base_age, "icon": "🎓", "text": f"Completed education. Starting career as: {career['title']}."})
+    else:
+        events.append({"age": base_age, "icon": "💼", "text": f"Entered workforce: {career['title']}."})
+    
+    events.append({"age": base_age + 1, "icon": "🏠", "text": f"Housing: {housing['title']}. Monthly cost: ${housing['rent']:,}."})
+    
+    if student_debt > 0:
+        events.append({"age": base_age + 2, "icon": "💸", "text": f"Debt strategy: {debt['title']} on ${int(student_debt):,}."})
+    
+    events.append({"age": base_age + 4, "icon": "💰", "text": f"Raise arrived. Choice: {lifestyle['title']}."})
+    if side_income:
+        events.append({"age": base_age + 5, "icon": "💡", "text": f"Side hustle generating ~${side_income//1000}K/yr."})
+    
+    events.append({"age": 28, "icon": "⚠️" if emergency["stress_event"] else "✅",
+                   "text": f"Emergency hit. Response: {emergency['title']}. Cost: ${emergency_cost:,}."})
+    
+    if debt_free_age <= 37 and student_debt > 0:
+        events.append({"age": debt_free_age, "icon": "🎉", "text": "Student loans fully paid off!"})
+    
+    events.append({"age": 37, "icon": "📊",
+                   "text": f"Net worth reaches ${round(final_nw/1000)}K at age 37."})
+    
+    # Add notable scenario events
+    if scenarios:
+        for s in scenarios[:5]:  # add top 5 scenarios to timeline
+            if s.get("age") and s["age"] not in [e["age"] for e in events]:
+                events.append({
+                    "age": s["age"],
+                    "icon": s.get("emoji", "📌"),
+                    "text": s["title"]
+                })
+    
+    events.sort(key=lambda x: x["age"])
+    
+    return {
+        "net_worth_by_year": net_worth_by_year,
+        "final_nw": final_nw,
+        "final_salary": final_salary,
+        "score": score,
+        "events": events,
+        "savings_rate": savings_rate,
+        "debt_free_age": debt_free_age,
+        "base_age": base_age,
+        "student_debt": student_debt
+    }
+
+
+# ─── ROUTES ────────────────────────────────────────────────────────────────────
+
+@app.route("/")
+def index():
+    return send_from_directory(".", "index.html")
+
+@app.route("/static/<path:filename>")
+def static_files(filename):
+    return send_from_directory("static", filename)
+
+@app.route("/api/character-data")
+def get_character_data():
+    return jsonify({
+        "first_names": FIRST_NAMES,
+        "last_names": LAST_NAMES,
+        "hometowns": HOMETOWNS,
+        "backgrounds": FAMILY_BACKGROUNDS,
+        "post_hs_choices": POST_HS_CHOICES,
+        "career_choices": CAREER_CHOICES,
+        "housing_choices": HOUSING_CHOICES,
+        "debt_choices": DEBT_CHOICES,
+        "lifestyle_choices": LIFESTYLE_CHOICES,
+        "emergency_choices": EMERGENCY_CHOICES
+    })
+
+@app.route("/api/generate-character", methods=["POST"])
+def generate_character():
+    """Generate a random character for random/beat gemini modes."""
+    data = request.json or {}
+    mode = data.get("mode", "random")
+    
+    name = random.choice(FIRST_NAMES) + " " + random.choice(LAST_NAMES)
+    hometown = random.choice(HOMETOWNS)
+    background = random.choice(FAMILY_BACKGROUNDS)
+    
+    backstory = generate_character_backstory(name, hometown, background)
+    
+    return jsonify({
+        "name": name,
+        "hometown": hometown,
+        "background": background,
+        "backstory": backstory
+    })
+
+@app.route("/api/generate-backstory", methods=["POST"])
+def gen_backstory():
+    data = request.json
+    name = data.get("name", "Alex")
+    hometown = data.get("hometown", "Anytown")
+    background = next((b for b in FAMILY_BACKGROUNDS if b["id"] == data.get("background_id", "middle_class")), FAMILY_BACKGROUNDS[1])
+    backstory = generate_character_backstory(name, hometown, background)
+    return jsonify({"backstory": backstory})
+
+@app.route("/api/generate-scenarios", methods=["POST"])
+def generate_scenarios():
+    """Generate all AI scenarios upfront."""
+    data = request.json
+    char_name = data.get("name", "Alex")
+    bg_id = data.get("background_id", "middle_class")
+    post_hs_id = data.get("post_hs_id", "four_year")
+    career_id = data.get("career_id", "bigtech")
+    
+    bg = next((b for b in FAMILY_BACKGROUNDS if b["id"] == bg_id), FAMILY_BACKGROUNDS[1])
+    post_hs = next((c for c in POST_HS_CHOICES if c["id"] == post_hs_id), POST_HS_CHOICES[0])
+    career = next((c for c in CAREER_CHOICES if c["id"] == career_id), CAREER_CHOICES[0])
+    
+    scenarios = generate_all_scenarios(char_name, bg, post_hs, career)
+    
+    return jsonify({"scenarios": scenarios})
+
+@app.route("/api/generate-gemini-choices", methods=["POST"])
+def gen_gemini_choices():
+    """Generate Gemini's choices for Beat Gemini mode."""
+    data = request.json
+    char_profile = data.get("char_profile", {})
+    gemini_choices = generate_gemini_choices(char_profile, {})
+    return jsonify(gemini_choices)
+
+@app.route("/api/compute-results", methods=["POST"])
+def compute():
+    data = request.json
+    selections = data.get("selections", {})
+    scenarios = data.get("scenarios", [])
+    result = compute_results(selections, scenarios)
+    return jsonify(result)
+
+@app.route("/api/high-scores", methods=["GET"])
+def get_high_scores():
+    return jsonify(load_high_scores())
+
+@app.route("/api/high-scores", methods=["POST"])
+def post_high_score():
+    data = request.json
+    scores = add_high_score(
+        data.get("name", "Anonymous"),
+        data.get("score", 0),
+        data.get("net_worth", 0),
+        data.get("mode", "standard")
+    )
+    return jsonify({"scores": scores, "success": True})
+
+if __name__ == "__main__":
+    print("🎓 Life Simulator starting on http://localhost:5000")
+    app.run(debug=True, port=5000)
