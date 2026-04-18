@@ -32,13 +32,14 @@ def save_high_scores(scores):
     with open(HIGH_SCORES_FILE, "w") as f:
         json.dump(scores, f, indent=2)
 
-def add_high_score(name, score, net_worth, mode):
+def add_high_score(name, score, net_worth, mode, game_length=""):
     scores = load_high_scores()
     scores.append({
         "name": name,
         "score": score,
         "net_worth": net_worth,
         "mode": mode,
+        "game_length": game_length,
         "timestamp": int(time.time())
     })
     scores.sort(key=lambda x: x["score"], reverse=True)
@@ -829,6 +830,60 @@ def gen_gemini_choices():
     gemini_choices = generate_gemini_choices(char_profile, {})
     return jsonify(gemini_choices)
 
+@app.route("/api/gemini-event-choice", methods=["POST"])
+def gemini_event_choice():
+    """Have Gemini pick the best choice for a single in-game event."""
+    data = request.json or {}
+    event_title = data.get("event_title", "")
+    story = data.get("story", "")
+    choices = data.get("choices", [])
+    state = data.get("state", {})
+
+    if not choices:
+        return jsonify({"choice": None, "reasoning": "No choices available."})
+
+    choices_text = "\n".join(
+        f"{i+1}. [{c['id']}] {c['title']}: {c['desc']} ({c.get('riskLevel','?')} risk) → {c.get('consequenceText','')}"
+        for i, c in enumerate(choices)
+    )
+
+    prompt = f"""You are playing a financial life simulation game. Pick the BEST choice for long-term financial health.
+
+Character state:
+- Age: {state.get('age', '?')} | Salary: ${state.get('salary', 0):,}/yr | Net Worth: ${state.get('net_worth', 0):,}
+- Savings: ${state.get('savings', 0):,} | Investments: ${state.get('investments', 0):,} | Debt: ${state.get('debt', 0):,}
+- Health: {state.get('health', 80)}% | Stress: {state.get('stress', 50)}% | Happiness: {state.get('happiness', 70)}%
+
+Event: "{event_title}"
+{story}
+
+Available choices:
+{choices_text}
+
+Think about long-term compound growth, debt burden, and risk management.
+Respond ONLY with valid JSON (no markdown): {{"choice": "choice_id_here", "reasoning": "one concise sentence"}}"""
+
+    result = call_gemini(prompt, max_tokens=200)
+
+    if result:
+        try:
+            clean = result.strip()
+            if clean.startswith("```"):
+                start = clean.find("{")
+                end = clean.rfind("}") + 1
+                clean = clean[start:end]
+            parsed = json.loads(clean)
+            # Validate the choice id
+            valid_ids = [c["id"] for c in choices]
+            if parsed.get("choice") in valid_ids:
+                return jsonify(parsed)
+        except Exception as e:
+            print(f"Gemini event choice parse error: {e}")
+
+    # Fallback: pick the low-risk option or first
+    fallback = next((c for c in choices if c.get("riskLevel") == "low"), choices[0])
+    return jsonify({"choice": fallback["id"], "reasoning": "Chose the safest available option."})
+
 @app.route("/api/compute-results", methods=["POST"])
 def compute():
     data = request.json
@@ -848,7 +903,8 @@ def post_high_score():
         data.get("name", "Anonymous"),
         data.get("score", 0),
         data.get("net_worth", 0),
-        data.get("mode", "standard")
+        data.get("mode", "standard"),
+        data.get("game_length", "")
     )
     return jsonify({"scores": scores, "success": True})
 
