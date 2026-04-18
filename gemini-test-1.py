@@ -28,7 +28,8 @@ try:
     genai.configure(api_key=API_KEY)
     model = genai.GenerativeModel("gemini-2.0-flash")
     GEMINI_AVAILABLE = True
-except Exception:
+except Exception as e:
+    print(f"DEBUG: Gemini failed — {e}")
     GEMINI_AVAILABLE = False
 
 # ── Terminal Helpers ──────────────────────────────────────────────────────────
@@ -91,6 +92,10 @@ def _call_gemini(prompt: str) -> str:
             text = text[4:]
     return text.strip()
 
+def _loading(msg: str):
+    slow_print(f"  ✨ {msg}", delay=0.03)
+    time.sleep(0.3)
+
 # ── Game State ────────────────────────────────────────────────────────────────
 @dataclass
 class Player:
@@ -110,7 +115,7 @@ class Player:
     housing: str = ""
     housing_cost: float = 0.0
     lifestyle: str = ""
-    lifestyle_options: list = field(default_factory=list)  # stored for cut_spending
+    lifestyle_options: list = field(default_factory=list)
 
     happiness: int = 60
     stress: int = 30
@@ -150,25 +155,24 @@ class Player:
         self.net_worth_history.append(self.net_worth)
 
 # ── Static Fallbacks ──────────────────────────────────────────────────────────
-# Used when Gemini is unavailable or returns bad JSON.
 
 FALLBACK_CAREERS = [
     {"title": "Software Engineer",       "salary": 95000, "stability": 0.85,
-     "desc": "Tech startup or large company. High demand, long hours.",             "emoji": "💻"},
+     "desc": "Tech startup or large company. High demand, long hours.",              "emoji": "💻"},
     {"title": "Teacher / Educator",      "salary": 45000, "stability": 0.95,
-     "desc": "Stable public sector role. Summers off, loan forgiveness.",           "emoji": "📚"},
+     "desc": "Stable public sector role. Summers off, loan forgiveness.",            "emoji": "📚"},
     {"title": "Marketing Specialist",    "salary": 55000, "stability": 0.75,
-     "desc": "Creative agency life. Fast-paced, client-driven.",                    "emoji": "📣"},
+     "desc": "Creative agency life. Fast-paced, client-driven.",                     "emoji": "📣"},
     {"title": "Nurse / Healthcare",      "salary": 72000, "stability": 0.90,
-     "desc": "High demand, shift work. Emotionally rewarding.",                     "emoji": "🏥"},
+     "desc": "High demand, shift work. Emotionally rewarding.",                      "emoji": "🏥"},
     {"title": "Freelancer / Gig Worker", "salary": 38000, "stability": 0.55,
-     "desc": "Total freedom. Feast or famine income. No benefits.",                 "emoji": "🎯"},
+     "desc": "Total freedom. Feast or famine income. No benefits.",                  "emoji": "🎯"},
     {"title": "Finance Analyst",         "salary": 80000, "stability": 0.80,
-     "desc": "Wall Street adjacent. Bonuses possible, stress high.",                "emoji": "📈"},
+     "desc": "Wall Street adjacent. Bonuses possible, stress high.",                 "emoji": "📈"},
     {"title": "UX / Product Designer",   "salary": 78000, "stability": 0.80,
-     "desc": "Shape how people interact with software. Creative meets technical.",   "emoji": "🎨"},
+     "desc": "Shape how people interact with software. Creative meets technical.",    "emoji": "🎨"},
     {"title": "Entrepreneur",            "salary": 28000, "stability": 0.40,
-     "desc": "High risk, high reward. Could be worth millions — or nothing.",       "emoji": "🚀"},
+     "desc": "High risk, high reward. Could be worth millions — or nothing.",        "emoji": "🚀"},
     {"title": "Cybersecurity Analyst",   "salary": 88000, "stability": 0.88,
      "desc": "Defending systems from hackers. Fast-growing field, always in demand.","emoji": "🔐"},
     {"title": "Physical Therapist",      "salary": 68000, "stability": 0.92,
@@ -177,31 +181,31 @@ FALLBACK_CAREERS = [
 
 FALLBACK_HOUSING = [
     {"title": "Roommates / Shared Apt", "monthly_cost": 700,  "requires_down": False,
-     "desc": "Split costs with friends. Less privacy, more savings.",         "emoji": "🏘️"},
+     "desc": "Split costs with friends. Less privacy, more savings.",        "emoji": "🏘️"},
     {"title": "Solo Apartment",         "monthly_cost": 1400, "requires_down": False,
-     "desc": "Your own space. Higher cost, but freedom.",                     "emoji": "🏙️"},
+     "desc": "Your own space. Higher cost, but freedom.",                    "emoji": "🏙️"},
     {"title": "Live with Parents",      "monthly_cost": 0,    "requires_down": False,
-     "desc": "Free rent! Social stigma, but rocket-fuel for savings.",        "emoji": "👨‍👩‍👧"},
+     "desc": "Free rent! Social stigma, but rocket-fuel for savings.",       "emoji": "👨‍👩‍👧"},
     {"title": "Buy a Condo",            "monthly_cost": 1600, "requires_down": True,
-     "desc": "Building equity. Requires $20K down payment.",                  "emoji": "🏠"},
+     "desc": "Building equity. Requires $20K down payment.",                 "emoji": "🏠"},
 ]
 
 FALLBACK_LIFESTYLES = [
     {"title": "Frugal Minimalist", "monthly_cost": 1200, "happiness_delta": +10,
-     "stress_delta": -5,  "desc": "Cooking at home, thrift stores, no subscriptions.",     "emoji": "🌱"},
+     "stress_delta": -5,  "desc": "Cooking at home, thrift stores, no subscriptions.",    "emoji": "🌱"},
     {"title": "Balanced",          "monthly_cost": 2000, "happiness_delta":   0,
-     "stress_delta":  0,  "desc": "Occasional dining out, some hobbies, modest fun.",      "emoji": "⚖️"},
+     "stress_delta":  0,  "desc": "Occasional dining out, some hobbies, modest fun.",     "emoji": "⚖️"},
     {"title": "Social Spender",    "monthly_cost": 3200, "happiness_delta": +15,
-     "stress_delta": +10, "desc": "Concerts, travel, great restaurants — YOLO.",           "emoji": "🎉"},
+     "stress_delta": +10, "desc": "Concerts, travel, great restaurants — YOLO.",          "emoji": "🎉"},
     {"title": "Luxury Seeker",     "monthly_cost": 5000, "happiness_delta":  +5,
-     "stress_delta": +20, "desc": "Premium everything. Designer goods, frequent trips.",   "emoji": "💎"},
+     "stress_delta": +20, "desc": "Premium everything. Designer goods, frequent trips.",  "emoji": "💎"},
 ]
 
 FALLBACK_DEBT = [
-    {"label": "No debt",            "amount": 0,      "desc": "Scholarships or worked through school. Lucky!"},
-    {"label": "Low ($15,000)",      "amount": 15000,  "desc": "Some loans. Manageable with discipline."},
-    {"label": "Average ($35,000)",  "amount": 35000,  "desc": "Typical 4-year university debt. Requires a plan."},
-    {"label": "High ($75,000)",     "amount": 75000,  "desc": "Grad school or private university. Heavy burden."},
+    {"label": "No debt",           "amount": 0,     "desc": "Scholarships or worked through school. Lucky!"},
+    {"label": "Low ($15,000)",     "amount": 15000, "desc": "Some loans. Manageable with discipline."},
+    {"label": "Average ($35,000)", "amount": 35000, "desc": "Typical 4-year university debt. Requires a plan."},
+    {"label": "High ($75,000)",    "amount": 75000, "desc": "Grad school or private university. Heavy burden."},
 ]
 
 FALLBACK_INVESTMENTS = [
@@ -215,7 +219,7 @@ FALLBACK_INVESTMENTS = [
 
 def gemini_generate_careers() -> list[dict]:
     """Generate 10 fresh career options — including unusual ones — per run."""
-    prompt = """You are generating career options for a financial life simulation game. 
+    prompt = """You are generating career options for a financial life simulation game.
 Create exactly 10 DIVERSE career paths for a recent college graduate.
 Include a wide spread across these categories:
   - Traditional high-paying (e.g. software engineer, finance analyst, pharmacist)
@@ -238,7 +242,6 @@ Vary the salaries realistically across the full range. No markdown. No extra tex
     try:
         text = _call_gemini(prompt)
         careers = json.loads(text)
-        # Validate structure
         for c in careers:
             assert all(k in c for k in ("title", "salary", "stability", "desc", "emoji"))
             c["salary"] = int(c["salary"])
@@ -284,7 +287,7 @@ def gemini_generate_lifestyles(career: str, salary: float) -> list[dict]:
 The player is a {career} earning {fmt_money(salary)}/year.
 
 Create exactly 4 DISTINCT lifestyle archetypes ranging from very frugal to extravagant.
-Be creative — avoid generic names. Examples: 'Digital Nomad', 'Quiet Quitter', 
+Be creative — avoid generic names. Examples: 'Digital Nomad', 'Quiet Quitter',
 'Fitness Obsessed', 'Foodie & Traveler', 'Homesteader', 'FIRE Devotee', 'Social Butterfly'.
 
 Return ONLY a JSON array of exactly 4 objects, ordered from cheapest to most expensive. Each must have:
@@ -311,7 +314,7 @@ No markdown. No extra text. Just the JSON array."""
 
 def gemini_generate_mid_year_decision(player: Player) -> dict:
     """Generate a unique, contextual mid-year decision for this specific player."""
-    prompt = f"""You are the narrator of a financial life simulation game. 
+    prompt = f"""You are the narrator of a financial life simulation game.
 Generate a UNIQUE mid-year financial decision moment for this player:
 
 Player: {player.age}-year-old {player.career}
@@ -332,7 +335,7 @@ Create a realistic, specific dilemma this person would actually face. Examples:
 Return ONLY a JSON object with:
   "prompt": 2-sentence setup of the situation (vivid, specific)
   "choices": array of exactly 3 choice objects, each with:
-    "label": short option name (max 6 words)  
+    "label": short option name (max 6 words)
     "desc": one sentence consequence/detail
     "savings_delta": one-time dollar impact on savings (negative or positive integer, 0 if neutral)
     "salary_delta": annual salary change (can be 0)
@@ -348,25 +351,30 @@ No markdown. No extra text. Just the JSON object."""
         assert len(decision["choices"]) == 3
         return decision
     except Exception:
-        # Fallback: static but decent
         return {
-            "prompt": "Your company is offering a professional development budget of $1,500. You could spend it on a certification course, donate it to your emergency fund, or use it for a networking conference.",
+            "prompt": "Your company is offering a professional development budget of $1,500. You could spend it on a certification course, put it toward your emergency fund, or use it for a networking conference.",
             "choices": [
-                {"label": "Take the certification course", "desc": "Boosts your credentials and likely salary.",
-                 "savings_delta": 0, "salary_delta": 2000, "happiness_delta": 5, "stress_delta": -3, "action_key": "cert"},
-                {"label": "Pocket it toward savings", "desc": "Direct cash boost to your emergency fund.",
-                 "savings_delta": 1500, "salary_delta": 0, "happiness_delta": 3, "stress_delta": -5, "action_key": "save"},
-                {"label": "Go to the conference", "desc": "Networking opportunity — connections could pay off later.",
-                 "savings_delta": 0, "salary_delta": 0, "happiness_delta": 10, "stress_delta": 5, "action_key": "network"},
+                {"label": "Take the certification course",
+                 "desc": "Boosts your credentials and likely your salary.",
+                 "savings_delta": 0, "salary_delta": 2000, "happiness_delta": 5, "stress_delta": -3,
+                 "action_key": "cert"},
+                {"label": "Pocket it toward savings",
+                 "desc": "Direct cash boost to your emergency fund.",
+                 "savings_delta": 1500, "salary_delta": 0, "happiness_delta": 3, "stress_delta": -5,
+                 "action_key": "save"},
+                {"label": "Go to the conference",
+                 "desc": "Networking opportunity — connections could pay off later.",
+                 "savings_delta": 0, "salary_delta": 0, "happiness_delta": 10, "stress_delta": 5,
+                 "action_key": "network"},
             ]
         }
 
 # ── Gemini: Narrative Generators ──────────────────────────────────────────────
 
 def gemini_event(player: Player) -> dict:
-    prompt = f"""You are the narrator of a financial life simulation game. Generate a realistic random life event 
-for a {player.age}-year-old who works as a {player.career}, earns {fmt_money(player.salary)}/year, 
-has {fmt_money(player.savings)} in savings, {fmt_money(player.debt)} in debt, and lives a 
+    prompt = f"""You are the narrator of a financial life simulation game. Generate a realistic random life event
+for a {player.age}-year-old who works as a {player.career}, earns {fmt_money(player.salary)}/year,
+has {fmt_money(player.savings)} in savings, {fmt_money(player.debt)} in debt, and lives a
 "{player.lifestyle}" lifestyle.
 
 Return ONLY a JSON object with these exact keys:
@@ -377,9 +385,9 @@ Return ONLY a JSON object with these exact keys:
   "stress_delta": integer -20 to +20
   "insight": one actionable financial lesson (1 sentence)
 
-Event types to draw from: medical bill, car breakdown, promotion bonus, inheritance, 
-identity theft, side hustle success, market crash, unexpected tax refund, 
-wedding expense, freelance opportunity, apartment repair, scholarship, 
+Event types to draw from: medical bill, car breakdown, promotion bonus, inheritance,
+identity theft, side hustle success, market crash, unexpected tax refund,
+wedding expense, freelance opportunity, apartment repair, scholarship,
 relocation offer, viral moment, product recall, crypto windfall/crash.
 No markdown. Just the JSON."""
     try:
@@ -395,8 +403,8 @@ No markdown. Just the JSON."""
         }
 
 def gemini_career_story(career: str, salary: float) -> str:
-    prompt = f"""Write a vivid 3-sentence story about the FIRST WEEK of work for a new graduate 
-starting their career as a {career} earning {fmt_money(salary)}/year. 
+    prompt = f"""Write a vivid 3-sentence story about the FIRST WEEK of work for a new graduate
+starting their career as a {career} earning {fmt_money(salary)}/year.
 Keep it grounded, slightly humorous, and relatable. No lists, just narrative prose."""
     try:
         return model.generate_content(prompt).text.strip()
@@ -404,9 +412,9 @@ Keep it grounded, slightly humorous, and relatable. No lists, just narrative pro
         return f"You nervously walked into your first day as a {career}. The office was a blur of new faces, passwords, and orientation packets. But as the week wrapped up, you felt a quiet pride — this was the beginning of something real."
 
 def gemini_year_recap(player: Player) -> str:
-    prompt = f"""You are narrating a financial life game. Write a SHORT (3 sentences) 
-year-in-review for a {player.age}-year-old {player.career}. 
-Net worth: {fmt_money(player.net_worth)}, savings: {fmt_money(player.savings)}, 
+    prompt = f"""You are narrating a financial life game. Write a SHORT (3 sentences)
+year-in-review for a {player.age}-year-old {player.career}.
+Net worth: {fmt_money(player.net_worth)}, savings: {fmt_money(player.savings)},
 debt: {fmt_money(player.debt)}, happiness: {player.happiness}/100, stress: {player.stress}/100.
 Recent events: {'; '.join(player.events[-3:]) if player.events else 'none yet'}.
 Make it feel like a personal journal entry — reflective and human."""
@@ -416,8 +424,8 @@ Make it feel like a personal journal entry — reflective and human."""
         return f"Year {player.year} has come and gone. Your net worth stands at {fmt_money(player.net_worth)}."
 
 def gemini_final_verdict(player: Player) -> str:
-    prompt = f"""Write a compelling 4-sentence financial life verdict for a {player.age}-year-old 
-who started at 22 with $1,000. Final stats: Net Worth {fmt_money(player.net_worth)}, 
+    prompt = f"""Write a compelling 4-sentence financial life verdict for a {player.age}-year-old
+who started at 22 with $1,000. Final stats: Net Worth {fmt_money(player.net_worth)},
 Career: {player.career}, Lifestyle: {player.lifestyle}, Happiness: {player.happiness}/100.
 Be honest — celebrate wins, acknowledge mistakes, end with one piece of wisdom.
 No lists. Pure narrative. Make it feel earned."""
@@ -445,10 +453,6 @@ def splash_screen():
     divider()
     print()
     pause("  Press ENTER to begin your story...")
-
-def _loading(msg: str):
-    slow_print(f"  ✨ {msg}", delay=0.03)
-    time.sleep(0.3)
 
 def setup_player() -> Player:
     clear()
@@ -480,7 +484,6 @@ def setup_player() -> Player:
     print()
     slow_print(f"  ✓ Offer accepted: {player.career} at {fmt_money(player.salary)}/yr.")
 
-    # First-week story
     print()
     _loading("Writing your first week on the job...")
     story = gemini_career_story(player.career, player.salary)
@@ -544,7 +547,7 @@ def setup_player() -> Player:
     print()
     _loading("Gemini is crafting lifestyle archetypes for your situation...")
     lifestyle_options = gemini_generate_lifestyles(player.career, player.salary)
-    player.lifestyle_options = lifestyle_options  # store for cut_spending later
+    player.lifestyle_options = lifestyle_options
     clear()
     box("CHOOSE YOUR LIFESTYLE")
     print()
@@ -609,19 +612,7 @@ def mid_year_choices(player: Player):
     slow_print("  📋  MID-YEAR DECISION TIME")
     divider("-")
 
-    # Always offer standard manual options
-    manual = []
-    if player.debt > 0 and player.savings > 5_000:
-        manual.append(("💪 Pay extra $2,000 toward debt", "debt_payoff"))
-    if player.lifestyle_options:
-        titles = [l["title"] for l in player.lifestyle_options]
-        if player.lifestyle in titles:
-            idx_life = titles.index(player.lifestyle)
-            if idx_life > 0:
-                manual.append(("✂️  Cut back spending (downgrade lifestyle)", "cut_spending"))
-    manual.append(("🧘 Stay the course — do nothing", "nothing"))
-
-    # Generate a Gemini dilemma
+    # Generate Gemini dilemma
     _loading("Gemini is crafting your mid-year dilemma...")
     decision = gemini_generate_mid_year_decision(player)
 
@@ -629,39 +620,48 @@ def mid_year_choices(player: Player):
     slow_print(wrap(f"  {decision['prompt']}"))
     print()
 
-    # Show AI choices first, then manual options
-    all_options = [(c["label"], f"ai_{c['action_key']}", c) for c in decision["choices"]]
-    display_labels = [f"[AI] {c['label']}" for c in decision["choices"]]
+    # Build manual fallback options
+    manual = []
+    if player.debt > 0 and player.savings > 5_000:
+        manual.append(("💪 Pay extra $2,000 toward debt", "debt_payoff"))
+    if player.lifestyle_options:
+        titles = [l["title"] for l in player.lifestyle_options]
+        if player.lifestyle in titles and titles.index(player.lifestyle) > 0:
+            manual.append(("✂️  Cut back spending (downgrade lifestyle)", "cut_spending"))
+    manual.append(("🧘 Stay the course — do nothing", "nothing"))
 
-    for lbl, key, c in all_options:
+    ai_choices = decision["choices"]
+
+    # Print AI choices: number + label + desc together, no duplication
+    print(f"  {'─' * 20} Your options {'─' * 20}")
+    print()
+    for i, c in enumerate(ai_choices, 1):
+        print(f"  [{i}] {c['label']}")
         print(f"       → {c['desc']}")
+        print()
 
-    divider("-")
-    slow_print(wrap("  Or choose a standard action:"))
-
-    combined_labels = display_labels + [m[0] for m in manual]
-    combined_keys   = [(k, c) for _, k, c in all_options] + [(m[1], None) for m in manual]
-
+    # Print manual options, continuing numbering from where AI left off
+    manual_start = len(ai_choices) + 1
+    print(f"  {'─' * 18} Standard actions {'─' * 16}")
     print()
-    for i, lbl in enumerate(combined_labels, 1):
-        print(f"  [{i}] {lbl}")
+    for j, (label, _) in enumerate(manual):
+        print(f"  [{manual_start + j}] {label}")
     print()
 
+    total = len(ai_choices) + len(manual)
     while True:
         try:
-            raw = input(f"  Your choice (1-{len(combined_labels)}): ").strip()
+            raw = input(f"  Your choice (1-{total}): ").strip()
             idx = int(raw) - 1
-            if 0 <= idx < len(combined_labels):
+            if 0 <= idx < total:
                 break
         except (ValueError, KeyboardInterrupt):
             pass
-        print(f"  ⚠  Please enter 1–{len(combined_labels)}.")
+        print(f"  ⚠  Please enter 1–{total}.")
 
-    chosen_key, chosen_ai = combined_keys[idx]
-
-    if chosen_ai is not None:
-        # Apply AI dilemma choice
-        c = chosen_ai
+    if idx < len(ai_choices):
+        # AI choice
+        c = ai_choices[idx]
         if c["savings_delta"] != 0:
             delta = c["savings_delta"]
             player.savings = max(0, player.savings + delta)
@@ -676,27 +676,30 @@ def mid_year_choices(player: Player):
         player.stress = max(0, min(100, player.stress + c["stress_delta"]))
         slow_print(f"\n  ✓ Choice made: {c['label']}")
         player.events.append(c["label"])
+    else:
+        # Manual choice
+        chosen_key = manual[idx - len(ai_choices)][1]
 
-    elif chosen_key == "debt_payoff":
-        extra = min(2_000, player.savings - 1_000)
-        player.savings -= extra
-        player.debt = max(0, player.debt - extra)
-        slow_print(f"\n  💪 Extra {fmt_money(extra)} toward debt. Remaining: {fmt_money(player.debt)}")
+        if chosen_key == "debt_payoff":
+            extra = min(2_000, player.savings - 1_000)
+            player.savings -= extra
+            player.debt = max(0, player.debt - extra)
+            slow_print(f"\n  💪 Extra {fmt_money(extra)} toward debt. Remaining: {fmt_money(player.debt)}")
 
-    elif chosen_key == "cut_spending":
-        titles = [l["title"] for l in player.lifestyle_options]
-        idx_life = titles.index(player.lifestyle)
-        if idx_life > 0:
-            new = player.lifestyle_options[idx_life - 1]
-            old = player.lifestyle_options[idx_life]
-            savings_gain = player.monthly_expenses - new["monthly_cost"]
-            player.monthly_expenses = new["monthly_cost"]
-            player.lifestyle = new["title"]
-            player.happiness = max(0, player.happiness + new["happiness_delta"] - old["happiness_delta"])
-            slow_print(f"\n  ✂️  Downgraded to '{new['title']}'. Saving {fmt_money(savings_gain)}/mo more.")
+        elif chosen_key == "cut_spending":
+            titles = [l["title"] for l in player.lifestyle_options]
+            idx_life = titles.index(player.lifestyle)
+            if idx_life > 0:
+                new = player.lifestyle_options[idx_life - 1]
+                old = player.lifestyle_options[idx_life]
+                savings_gain = player.monthly_expenses - new["monthly_cost"]
+                player.monthly_expenses = new["monthly_cost"]
+                player.lifestyle = new["title"]
+                player.happiness = max(0, player.happiness + new["happiness_delta"] - old["happiness_delta"])
+                slow_print(f"\n  ✂️  Downgraded to '{new['title']}'. Saving {fmt_money(savings_gain)}/mo more.")
 
-    elif chosen_key == "nothing":
-        slow_print("\n  🧘 You stayed the course. Sometimes that's the wisest move.")
+        elif chosen_key == "nothing":
+            slow_print("\n  🧘 You stayed the course. Sometimes that's the wisest move.")
 
     pause()
 
@@ -811,12 +814,12 @@ def show_chart(player: Player):
 # ── Final Screen ───────────────────────────────────────────────────────────────
 
 RATINGS = [
-    (500_000,  "🏆 LEGENDARY — Financial Freedom Achieved!"),
-    (200_000,  "🥇 EXCELLENT — Solid foundations built."),
-    (100_000,  "🥈 GOOD — You're on the right track."),
-    (50_000,   "🥉 FAIR — Some progress, but room to grow."),
-    (0,        "📈 DEVELOPING — The journey continues."),
-    (-1e9,     "😬 IN THE RED — Debt won this round."),
+    (500_000, "🏆 LEGENDARY — Financial Freedom Achieved!"),
+    (200_000, "🥇 EXCELLENT — Solid foundations built."),
+    (100_000, "🥈 GOOD — You're on the right track."),
+    (50_000,  "🥉 FAIR — Some progress, but room to grow."),
+    (0,       "📈 DEVELOPING — The journey continues."),
+    (-1e9,    "😬 IN THE RED — Debt won this round."),
 ]
 
 def final_screen(player: Player):
