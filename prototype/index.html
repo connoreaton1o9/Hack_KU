@@ -35,6 +35,86 @@
   --font-body: 'DM Sans', system-ui, sans-serif;
 }
 
+/* ── Dark Mode ── */
+[data-theme="dark"] {
+  --cream: #141210;
+  --cream2: #1E1C18;
+  --ink: #F0EBE0;
+  --ink2: #C8BFA8;
+  --ink3: #7A7260;
+  --gold: #D4A832;
+  --gold-light: #2A2210;
+  --gold-dark: #F0C84A;
+  --sage: #5A9C6A;
+  --sage-light: #0E2014;
+  --rose: #D4635A;
+  --rose-light: #2A0E0C;
+  --sky: #4A8ED0;
+  --sky-light: #0A1828;
+  --border: rgba(240,235,224,0.10);
+  --border2: rgba(240,235,224,0.18);
+  --shadow: 0 2px 8px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.25);
+}
+
+[data-theme="dark"] body {
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(212,168,50,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, rgba(90,156,106,0.04) 0%, transparent 60%);
+}
+
+[data-theme="dark"] body::before { opacity: 0.15; }
+
+[data-theme="dark"] .form-group input,
+[data-theme="dark"] .form-group select,
+[data-theme="dark"] .choice-card,
+[data-theme="dark"] .score-entry input {
+  background: var(--cream2);
+  color: var(--ink);
+  border-color: var(--border2);
+}
+
+[data-theme="dark"] .intro-masthead,
+[data-theme="dark"] .event-card,
+[data-theme="dark"] .outcome-reveal,
+[data-theme="dark"] .char-reveal,
+[data-theme="dark"] .score-entry,
+[data-theme="dark"] .chart-wrap,
+[data-theme="dark"] .insight-card,
+[data-theme="dark"] .event-item,
+[data-theme="dark"] .compare-card,
+[data-theme="dark"] .metric-card {
+  background: var(--cream2);
+}
+
+[data-theme="dark"] .mode-card { background: var(--cream2); }
+[data-theme="dark"] .choice-card:hover { background: #2A2820; }
+[data-theme="dark"] .choice-card.selected { background: #2A2210; }
+[data-theme="dark"] .year-choice-btn { background: var(--cream2); color: var(--ink); }
+[data-theme="dark"] .year-choice-btn:hover { background: #2A2210; }
+[data-theme="dark"] .length-card { background: var(--cream2); }
+[data-theme="dark"] .length-card.selected { background: #2A2210; }
+[data-theme="dark"] #loading-overlay { background: rgba(20,18,16,0.96); }
+[data-theme="dark"] .backstory-box { background: var(--cream2); }
+[data-theme="dark"] .gemini-reasoning { background: #0A1828; }
+
+/* Dark mode toggle button */
+.dm-toggle {
+  position: fixed;
+  top: 1rem; right: 1rem;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  background: var(--cream2);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  z-index: 500;
+  box-shadow: var(--shadow);
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+.dm-toggle:hover { transform: scale(1.1); border-color: var(--gold); }
+
 body {
   font-family: var(--font-body);
   background: var(--cream);
@@ -535,6 +615,7 @@ body::before {
   <div class="loading-sub" id="loading-sub">Preparing your life simulation…</div>
 </div>
 
+<button class="dm-toggle" id="dm-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
 <div id="toast" class="toast"></div>
 
 <div class="page">
@@ -811,19 +892,20 @@ const EVENT_POOL = [
     conditions: gs => gs.age >= 22 && gs.job_level < 4,
     story: gs => `Your manager pulls you aside. The company wants to promote you to ${gs.job_level >= 3 ? 'senior' : 'mid-level'} ${gs.career_title}. There's a catch: it comes with higher expectations and less flexibility.`,
     choices: [
-      { id: 'accept', title: 'Accept the Promotion', desc: 'More responsibility, more pay.', riskLevel: 'low', consequenceText: '+$8–14K salary, +stress', apply: gs => {
+      { id: 'accept', title: 'Accept the Promotion', desc: 'More responsibility, more pay.', riskLevel: 'low', consequenceText: '+$8–14K salary, +Stress, +Happiness', apply: gs => {
         const raise = 8000 + Math.random() * 6000;
-        gs.salary += raise; gs.job_level = Math.min(5, gs.job_level + 1); gs.stress = Math.min(100, gs.stress + 10);
-        return { log: `Got promoted! Salary +${fmt(raise)}/yr`, statChanges: [{label: `+${fmt(raise)}/yr`, type:'pos'}, {label:'+Stress', type:'neg'}], quality: 'good' };
+        gs.salary += raise; gs.job_level = Math.min(5, gs.job_level + 1);
+        gs.stress = Math.min(100, gs.stress + 12); gs.happiness = Math.min(100, gs.happiness + 8);
+        return { log: `Got promoted! Salary +${fmt(raise)}/yr. Exciting but demanding.`, statChanges: [{label:`+${fmt(raise)}/yr`, type:'pos'},{label:'+12 Stress', type:'neg'},{label:'+8 Happiness', type:'pos'}], quality: 'good' };
       }},
-      { id: 'negotiate', title: 'Negotiate Hard', desc: 'Push for 20% more. They might say no.', riskLevel: 'med', consequenceText: 'High risk/reward', apply: gs => {
+      { id: 'negotiate', title: 'Negotiate Hard', desc: 'Push for 20% more. They might say no.', riskLevel: 'med', consequenceText: 'Win: big raise. Lose: stress + no raise', apply: gs => {
         const win = Math.random() > 0.4;
-        if (win) { const raise = 14000 + Math.random() * 8000; gs.salary += raise; gs.job_level = Math.min(5, gs.job_level + 1); return { log: `Negotiated successfully! Salary +${fmt(raise)}/yr`, statChanges: [{label:`+${fmt(raise)}/yr`, type:'pos'}], quality:'great' }; }
-        else { gs.stress += 8; return { log: 'Negotiation fell through. Kept current role.', statChanges: [{label:'+Stress', type:'neg'}], quality:'neutral' }; }
+        if (win) { const raise = 14000 + Math.random() * 8000; gs.salary += raise; gs.job_level = Math.min(5, gs.job_level + 1); gs.happiness = Math.min(100, gs.happiness + 12); return { log: `Negotiated successfully! Salary +${fmt(raise)}/yr. Confidence boost.`, statChanges: [{label:`+${fmt(raise)}/yr`, type:'pos'},{label:'+12 Happiness', type:'pos'}], quality:'great' }; }
+        else { gs.stress = Math.min(100, gs.stress + 15); gs.happiness = Math.max(0, gs.happiness - 8); return { log: 'Negotiation fell through. Awkward. No raise.', statChanges: [{label:'+15 Stress', type:'neg'},{label:'-8 Happiness', type:'neg'}], quality:'neutral' }; }
       }},
-      { id: 'decline', title: 'Decline — Keep Balance', desc: 'Stay comfortable, protect your time.', riskLevel: 'low', consequenceText: 'No pay increase, less stress', apply: gs => {
-        gs.stress = Math.max(0, gs.stress - 5); gs.happiness = Math.min(100, gs.happiness + 8);
-        return { log: 'Stayed in current role. Work-life balance protected.', statChanges: [{label:'-Stress', type:'pos'}, {label:'+Happiness', type:'pos'}], quality:'neutral' };
+      { id: 'decline', title: 'Decline — Keep Balance', desc: 'Stay comfortable, protect your time.', riskLevel: 'low', consequenceText: 'No pay increase, -Stress, +Happiness', apply: gs => {
+        gs.stress = Math.max(0, gs.stress - 18); gs.happiness = Math.min(100, gs.happiness + 12); gs.health = Math.min(100, gs.health + 4);
+        return { log: 'Declined the promotion. Stress drops noticeably. Better sleep.', statChanges: [{label:'-18 Stress', type:'pos'},{label:'+12 Happiness', type:'pos'},{label:'+4 Health', type:'pos'}], quality:'neutral' };
       }}
     ]
   },
@@ -832,24 +914,25 @@ const EVENT_POOL = [
     conditions: gs => gs.age >= 23 && !gs.unemployed,
     story: gs => `The company announces a 15% headcount reduction. You get the call on a Tuesday. Your job is gone. The severance is 8 weeks of pay — about ${fmt(gs.salary / 6.5)}.`,
     choices: [
-      { id: 'job_hunt', title: 'Aggressively Job Hunt', desc: 'Full-time search. Back to work in 2–4 months.', riskLevel: 'med', consequenceText: 'Back employed in ~3 months', apply: gs => {
+      { id: 'job_hunt', title: 'Aggressively Job Hunt', desc: 'Full-time search. Back to work in 2–4 months.', riskLevel: 'med', consequenceText: 'Back employed soon, -Health from pressure', apply: gs => {
         const months = 2 + Math.floor(Math.random() * 3);
         const severance = gs.salary / 6.5;
         const salaryNew = gs.salary * (0.95 + Math.random() * 0.15);
         gs.savings -= months * (gs.monthly_expenses || 3000);
         gs.savings = Math.max(0, gs.savings + severance);
         gs.salary = salaryNew;
-        gs.stress += 20;
-        return { log: `Found new job in ${months} months. New salary: ${fmt(salaryNew)}/yr`, statChanges: [{label:'-$'+fmt(months*(gs.monthly_expenses||3000)), type:'neg'}, {label:'Reemployed', type:'pos'}], quality: 'neutral' };
+        gs.stress = Math.min(100, gs.stress + 18); gs.health = Math.max(0, gs.health - 8); gs.happiness = Math.max(0, gs.happiness - 10);
+        return { log: `Found new job in ${months} months. Stressful grind.`, statChanges: [{label:`-${fmt(months*(gs.monthly_expenses||3000))}`, type:'neg'},{label:'Reemployed', type:'pos'},{label:'+18 Stress', type:'neg'},{label:'-8 Health', type:'neg'}], quality: 'neutral' };
       }},
-      { id: 'freelance', title: 'Go Freelance', desc: 'Use skills independently. High variance income for 6–12 months.', riskLevel: 'high', consequenceText: 'Variable: could gain or lose big', apply: gs => {
+      { id: 'freelance', title: 'Go Freelance', desc: 'Use skills independently. High variance.', riskLevel: 'high', consequenceText: 'Could thrive or burn through savings', apply: gs => {
         const success = Math.random();
-        if (success > 0.5) { gs.salary = gs.salary * 1.2; gs.savings += 5000; gs.stress += 15; return { log: 'Freelancing took off! Income higher than before.', statChanges: [{label:'+20% Income', type:'pos'},{label:'+Stress', type:'neg'}], quality:'great' }; }
-        else { gs.savings -= 12000; gs.savings = Math.max(0, gs.savings); gs.stress += 30; return { log: 'Freelancing was rough. Burned through savings.', statChanges: [{label:'-$12K Savings', type:'neg'},{label:'+Stress', type:'neg'}], quality:'bad' }; }
+        if (success > 0.5) { gs.salary = gs.salary * 1.2; gs.savings += 5000; gs.stress = Math.min(100, gs.stress + 10); gs.happiness = Math.min(100, gs.happiness + 15); return { log: 'Freelancing took off! More income and autonomy.', statChanges: [{label:'+20% Income', type:'pos'},{label:'+15 Happiness', type:'pos'},{label:'+10 Stress', type:'neg'}], quality:'great' }; }
+        else { gs.savings -= 12000; gs.savings = Math.max(0, gs.savings); gs.stress = Math.min(100, gs.stress + 28); gs.health = Math.max(0, gs.health - 10); return { log: 'Freelancing was rough. Savings drained. Health suffered.', statChanges: [{label:'-$12K', type:'neg'},{label:'+28 Stress', type:'neg'},{label:'-10 Health', type:'neg'}], quality:'bad' }; }
       }},
-      { id: 'reskill', title: 'Use Time to Reskill', desc: 'Take a course. Get a certif. Takes 4 months, higher ceiling.', riskLevel: 'low', consequenceText: 'Delayed return, better long-term trajectory', apply: gs => {
-        gs.savings -= 8000; gs.savings = Math.max(0, gs.savings); gs.salary = gs.salary * 1.1; gs.stress += 5;
-        return { log: 'Reskilled and returned stronger. Salary up 10%.', statChanges: [{label:'-$8K for courses', type:'neg'},{label:'+10% salary ceiling', type:'pos'}], quality:'neutral' };
+      { id: 'reskill', title: 'Use Time to Reskill', desc: 'Take courses. 4 months, stronger return.', riskLevel: 'low', consequenceText: 'Delayed return, +salary ceiling, -Stress', apply: gs => {
+        gs.savings -= 8000; gs.savings = Math.max(0, gs.savings); gs.salary = gs.salary * 1.1;
+        gs.stress = Math.max(0, gs.stress - 10); gs.happiness = Math.min(100, gs.happiness + 8);
+        return { log: 'Reskilled. Returned calmer and stronger. Salary up 10%.', statChanges: [{label:'-$8K courses', type:'neg'},{label:'+10% salary', type:'pos'},{label:'-10 Stress', type:'pos'},{label:'+8 Happiness', type:'pos'}], quality:'neutral' };
       }}
     ]
   },
@@ -858,14 +941,15 @@ const EVENT_POOL = [
     conditions: gs => gs.age >= 21 && !gs.has_side_hustle,
     story: gs => `A friend mentions they've been making serious money on the side — freelancing, an Etsy shop, a YouTube channel. You have a skill that could translate. It's 10–15 hours a week, but the upside is real.`,
     choices: [
-      { id: 'launch', title: 'Launch the Side Hustle', desc: 'Commit 12hrs/week. $400–1,500/mo potential.', riskLevel: 'med', consequenceText: 'Extra income, costs time & energy', apply: gs => {
+      { id: 'launch', title: 'Launch the Side Hustle', desc: 'Commit 12hrs/week. $400–1,500/mo potential.', riskLevel: 'med', consequenceText: 'Extra income, +Stress, less free time', apply: gs => {
         const income = 400 + Math.floor(Math.random() * 1100);
-        gs.side_income = income * 12; gs.has_side_hustle = true; gs.stress += 10; gs.happiness += 5;
-        return { log: `Side hustle generating ${income}/mo extra!`, statChanges: [{label:`+${income}/mo`, type:'pos'},{label:'+Stress', type:'neg'}], quality:'good' };
+        gs.side_income = income * 12; gs.has_side_hustle = true;
+        gs.stress = Math.min(100, gs.stress + 14); gs.happiness = Math.max(0, gs.happiness - 5); gs.health = Math.max(0, gs.health - 4);
+        return { log: `Side hustle generating ${Math.round(income)}/mo. Less sleep, more money.`, statChanges: [{label:`+${income}$/mo`, type:'pos'},{label:'+14 Stress', type:'neg'},{label:'-5 Happiness', type:'neg'}], quality:'good' };
       }},
-      { id: 'skip', title: 'Pass — Focus on Main Job', desc: 'Protect your bandwidth for career growth.', riskLevel: 'low', consequenceText: 'No extra income, more rest', apply: gs => {
-        gs.happiness += 3;
-        return { log: 'Focused on main career. Side hustle skipped.', statChanges: [{label:'Focused', type:'neutral'}], quality:'neutral' };
+      { id: 'skip', title: 'Pass — Protect Your Time', desc: 'Guard your bandwidth. Rest matters.', riskLevel: 'low', consequenceText: 'No extra income, -Stress, +Health', apply: gs => {
+        gs.stress = Math.max(0, gs.stress - 8); gs.happiness = Math.min(100, gs.happiness + 10); gs.health = Math.min(100, gs.health + 5);
+        return { log: 'Chose rest over hustle. Recharge pays dividends.', statChanges: [{label:'-8 Stress', type:'pos'},{label:'+10 Happiness', type:'pos'},{label:'+5 Health', type:'pos'}], quality:'neutral' };
       }}
     ]
   },
@@ -939,10 +1023,12 @@ const EVENT_POOL = [
   { id: 'medical_emergency', emoji: '🏥', category: 'health', title: 'Medical Emergency',
     story: gs => `A sudden medical issue lands you in the ER — appendix, accident, or something else the doctors want to "monitor." The bill arrives: ${fmt(4000 + Math.floor(Math.random() * 8000))} after insurance (or ${fmt(12000 + Math.floor(Math.random() * 8000))} without).`,
     choices: [
-      { id: 'savings', title: 'Pay from Emergency Fund', desc: 'This is what the fund is for.', riskLevel: 'low', consequenceText: '-Emergency fund, -Health', apply: gs => {
+      { id: 'savings', title: 'Pay from Emergency Fund', desc: 'This is what the fund is for.', riskLevel: 'low', consequenceText: '-Savings, -12 Health, -Stress (handled it)', apply: gs => {
         const bill = gs.has_insurance ? 4000 + Math.floor(Math.random()*8000) : 12000 + Math.floor(Math.random()*8000);
-        gs.savings = Math.max(0, gs.savings - bill); gs.health = Math.max(0, gs.health - 10);
-        return { log: `Paid ${fmt(bill)} medical bill from savings.`, statChanges: [{label:`-${fmt(bill)}`, type:'neg'},{label:'-Health', type:'neg'}], quality:'bad' };
+        gs.savings = Math.max(0, gs.savings - bill); gs.health = Math.max(0, gs.health - 12);
+        gs.stress = Math.max(0, gs.stress - 5); // having a plan reduces panic
+        gs.happiness = Math.max(0, gs.happiness - 8);
+        return { log: `Paid ${fmt(bill)} from emergency fund. Painful but handled.`, statChanges: [{label:`-${fmt(bill)}`, type:'neg'},{label:'-12 Health', type:'neg'},{label:'-5 Stress', type:'pos'}], quality:'bad' };
       }},
       { id: 'payment_plan', title: 'Set Up Payment Plan', desc: '$300/mo over 18 months.', riskLevel: 'med', consequenceText: '-$300/mo for 18 months', apply: gs => {
         gs.monthly_expenses = (gs.monthly_expenses || 3000) + 300; gs.health = Math.max(0, gs.health - 10);
@@ -1004,9 +1090,10 @@ const EVENT_POOL = [
     conditions: gs => gs.age >= 24 && !gs.partner,
     story: gs => `You've been with your partner for two years. Things are serious. They want to move in together — splitting costs could save you $800/mo. Or maybe this is the moment to pop the question. Or maybe you're not ready and need to have that hard conversation.`,
     choices: [
-      { id: 'move_in', title: 'Move In Together', desc: 'Split costs. Save $800/mo.', riskLevel: 'low', consequenceText: '+$800/mo savings, +Happiness', apply: gs => {
-        gs.monthly_expenses -= 800; gs.partner = true; gs.happiness = Math.min(100, gs.happiness + 15);
-        return { log: 'Moved in together. Saving $800/mo on housing costs!', statChanges: [{label:'-$800/mo costs', type:'pos'},{label:'+Happiness', type:'pos'}], quality:'good' };
+      { id: 'move_in', title: 'Move In Together', desc: 'Split costs. Save $800/mo.', riskLevel: 'low', consequenceText: '-$800/mo costs, +Happiness, -Stress', apply: gs => {
+        gs.monthly_expenses -= 800; gs.partner = true;
+        gs.happiness = Math.min(100, gs.happiness + 18); gs.stress = Math.max(0, gs.stress - 12); gs.health = Math.min(100, gs.health + 3);
+        return { log: 'Moved in together. Costs down, mood up, less lonely.', statChanges: [{label:'-$800/mo', type:'pos'},{label:'+18 Happiness', type:'pos'},{label:'-12 Stress', type:'pos'}], quality:'good' };
       }},
       { id: 'propose', title: 'Get Engaged', desc: 'Ring costs $3K–8K. Wedding planning begins.', riskLevel: 'med', consequenceText: '-$5K ring + future wedding costs', apply: gs => {
         gs.savings -= 5000; gs.savings = Math.max(0, gs.savings); gs.partner = true; gs.engaged = true; gs.happiness = Math.min(100, gs.happiness + 25);
@@ -1076,18 +1163,20 @@ const EVENT_POOL = [
     conditions: gs => gs.age >= 24,
     story: gs => `The economy is contracting. Companies are cutting. Your salary is frozen — or worse, you get a 10% pay cut. The job market is brutal. The next 18 months will test your financial resilience.`,
     choices: [
-      { id: 'cut_costs', title: 'Aggressively Cut Expenses', desc: 'Tighten the belt. Survive intact.', riskLevel: 'low', consequenceText: '-$400/mo expenses, -Happiness', apply: gs => {
-        gs.monthly_expenses -= 400; gs.happiness = Math.max(0, gs.happiness - 10); gs.salary *= 0.9;
-        return { log: 'Cut expenses and weathered the recession.', statChanges: [{label:'-$400/mo costs', type:'pos'},{label:'-10% salary', type:'neg'}], quality:'neutral' };
+      { id: 'cut_costs', title: 'Aggressively Cut Expenses', desc: 'Tighten the belt. Survive intact.', riskLevel: 'low', consequenceText: '-$400/mo costs, -Happiness, -Stress', apply: gs => {
+        gs.monthly_expenses -= 400; gs.happiness = Math.max(0, gs.happiness - 12); gs.salary *= 0.9;
+        gs.stress = Math.max(0, gs.stress - 5); // control reduces anxiety
+        return { log: 'Cut spending hard. Less fun, but you feel in control.', statChanges: [{label:'-$400/mo', type:'pos'},{label:'-12 Happiness', type:'neg'},{label:'-5 Stress', type:'pos'}], quality:'neutral' };
       }},
-      { id: 'invest_more', title: 'Keep Investing Consistently', desc: 'Down markets are buying opportunities.', riskLevel: 'med', consequenceText: 'Short-term risk, long-term reward', apply: gs => {
-        gs.salary *= 0.9; gs.investments *= 0.8; // hit now
-        gs.stress += 10;
-        return { log: 'Kept investing through the downturn. Painful now, powerful later.', statChanges: [{label:'-10% salary', type:'neg'},{label:'Bought low', type:'pos'}], quality:'neutral' };
+      { id: 'invest_more', title: 'Keep Investing Consistently', desc: 'Down markets are buying opportunities.', riskLevel: 'med', consequenceText: '+Stress short-term, strong long-term gains', apply: gs => {
+        gs.salary *= 0.9; gs.investments *= 0.8;
+        gs.stress = Math.min(100, gs.stress + 15); gs.happiness = Math.max(0, gs.happiness - 8);
+        return { log: 'Held the line investing. Portfolio is down but the thesis holds.', statChanges: [{label:'-10% salary', type:'neg'},{label:'Bought low', type:'pos'},{label:'+15 Stress', type:'neg'}], quality:'neutral' };
       }},
-      { id: 'second_job', title: 'Pick Up a Second Job', desc: 'Extra $1,200/mo but exhausting.', riskLevel: 'low', consequenceText: '+$1,200/mo, +Stress, -Health', apply: gs => {
-        gs.salary *= 0.9; gs.side_income = (gs.side_income || 0) + 14400; gs.stress += 20; gs.health = Math.max(0, gs.health - 15);
-        return { log: 'Picked up second job. Exhausting but survived recession.', statChanges: [{label:'+$1,200/mo', type:'pos'},{label:'+Stress', type:'neg'},{label:'-Health', type:'neg'}], quality:'neutral' };
+      { id: 'second_job', title: 'Pick Up a Second Job', desc: 'Extra $1,200/mo but exhausting.', riskLevel: 'low', consequenceText: '+$1,200/mo, +25 Stress, -15 Health', apply: gs => {
+        gs.salary *= 0.9; gs.side_income = (gs.side_income || 0) + 14400;
+        gs.stress = Math.min(100, gs.stress + 25); gs.health = Math.max(0, gs.health - 15); gs.happiness = Math.max(0, gs.happiness - 10);
+        return { log: 'Two jobs, zero downtime. Body and mind paying the price.', statChanges: [{label:'+$1,200/mo', type:'pos'},{label:'+25 Stress', type:'neg'},{label:'-15 Health', type:'neg'}], quality:'neutral' };
       }}
     ]
   },
@@ -1096,9 +1185,10 @@ const EVENT_POOL = [
     conditions: gs => gs.age >= 23 && gs.job_level >= 2,
     story: gs => `A recruiter slides into your inbox. Company X wants to hire you — ${fmt(gs.salary * 1.22)}/yr, signing bonus of $10K, and fully remote. Your current employer is good. This would mean starting over in a new culture.`,
     choices: [
-      { id: 'accept', title: 'Take the New Job', desc: '22% raise + $10K signing bonus.', riskLevel: 'med', consequenceText: '+22% salary, new start', apply: gs => {
-        const oldSalary = gs.salary; gs.salary = gs.salary * 1.22; gs.savings += 10000; gs.stress += 8;
-        return { log: `Took new job! Salary went from ${fmt(oldSalary)} to ${fmt(gs.salary)}/yr.`, statChanges: [{label:'+22% salary', type:'pos'},{label:'+$10K bonus', type:'pos'}], quality:'great' };
+      { id: 'accept', title: 'Take the New Job', desc: '22% raise + $10K signing bonus.', riskLevel: 'med', consequenceText: '+22% salary, +10K bonus, adjustment stress', apply: gs => {
+        const oldSalary = gs.salary; gs.salary = gs.salary * 1.22; gs.savings += 10000;
+        gs.stress = Math.min(100, gs.stress + 14); gs.happiness = Math.min(100, gs.happiness + 10);
+        return { log: `New job! Salary ${fmt(oldSalary)}→${fmt(gs.salary)}/yr. Exciting but adjustment is real.`, statChanges: [{label:'+22% salary', type:'pos'},{label:'+$10K bonus', type:'pos'},{label:'+14 Stress', type:'neg'},{label:'+10 Happiness', type:'pos'}], quality:'great' };
       }},
       { id: 'counteroffer', title: 'Use It as Leverage', desc: 'Show current boss. Get a counteroffer.', riskLevel: 'high', consequenceText: 'Risk: boss says no or get let go', apply: gs => {
         const win = Math.random() > 0.45;
@@ -1121,13 +1211,15 @@ const EVENT_POOL = [
         gs.monthly_expenses += 600; gs.happiness = Math.min(100, gs.happiness + 15);
         return { log: 'Upgraded lifestyle. $600/mo more going out.', statChanges: [{label:'+$600/mo', type:'neg'},{label:'+Happiness', type:'pos'}], quality:'neutral' };
       }},
-      { id: 'resist', title: 'Hold the Line on Spending', desc: 'Keep lifestyle flat. Let gap widen.', riskLevel: 'low', consequenceText: '+Savings rate, -Social FOMO', apply: gs => {
-        const extraSaved = 600 * 12 * 0.7; gs.investments += extraSaved; gs.happiness = Math.max(0, gs.happiness - 5);
-        return { log: `Resisted lifestyle creep. ${fmt(extraSaved)} extra invested this year.`, statChanges: [{label:`+${fmt(extraSaved)} invested`, type:'pos'},{label:'Some FOMO', type:'neg'}], quality:'good' };
+      { id: 'resist', title: 'Hold the Line on Spending', desc: 'Keep lifestyle flat. Build wealth quietly.', riskLevel: 'low', consequenceText: '+Investments, -Happiness short-term', apply: gs => {
+        const extraSaved = 600 * 12 * 0.7; gs.investments += extraSaved;
+        gs.happiness = Math.max(0, gs.happiness - 8); gs.stress = Math.max(0, gs.stress - 5);
+        return { log: `Resisted lifestyle creep. ${Math.round(extraSaved/1000)}K extra invested. Some social friction.`, statChanges: [{label:`+${fmt(extraSaved)} invested`, type:'pos'},{label:'-8 Happiness', type:'neg'},{label:'-5 Stress', type:'pos'}], quality:'good' };
       }},
-      { id: 'automate', title: 'Automate Savings First', desc: 'Raise your 401k %, then spend what\'s left.', riskLevel: 'low', consequenceText: '+Savings rate, balanced life', apply: gs => {
+      { id: 'automate', title: 'Automate Savings First', desc: 'Raise 401k %, spend freely after. Best of both.', riskLevel: 'low', consequenceText: '+Investments, balanced happiness and stress', apply: gs => {
         gs.investments += 400 * 12; gs.monthly_expenses += 200;
-        return { log: 'Automated savings increase first. Smart discipline.', statChanges: [{label:'+$4,800 invested', type:'pos'},{label:'Sustainable', type:'pos'}], quality:'great' };
+        gs.happiness = Math.min(100, gs.happiness + 5); gs.stress = Math.max(0, gs.stress - 8);
+        return { log: 'Automated savings increase. Feels disciplined, not deprived.', statChanges: [{label:'+$4,800 invested', type:'pos'},{label:'+5 Happiness', type:'pos'},{label:'-8 Stress', type:'pos'}], quality:'great' };
       }}
     ]
   },
@@ -1165,11 +1257,15 @@ const EVENT_POOL = [
         gs.monthly_expenses += 200; gs.stress = Math.max(0, gs.stress - 15); gs.health = Math.min(100, gs.health + 15);
         return { log: 'Investing in mental health. $200/mo therapy + gym.', statChanges: [{label:'+$200/mo', type:'neg'},{label:'-Stress', type:'pos'}], quality:'good' };
       }},
-      { id: 'push_through', title: 'Power Through — No Time', desc: 'Keep grinding. Money first.', riskLevel: 'high', consequenceText: '+Risk of serious health event', apply: gs => {
-        gs.stress += 15; gs.health = Math.max(0, gs.health - 20);
+      { id: 'push_through', title: 'Power Through — No Time', desc: 'Keep grinding. Health is secondary.', riskLevel: 'high', consequenceText: '+20 Stress, -20 Health, possible crisis', apply: gs => {
+        gs.stress = Math.min(100, gs.stress + 20); gs.health = Math.max(0, gs.health - 20); gs.happiness = Math.max(0, gs.happiness - 15);
         const crisis = Math.random() > 0.5;
-        if (crisis) { gs.savings -= 20000; gs.savings = Math.max(0, gs.savings); return { log: 'Burnout led to serious health event. $20K in costs.', statChanges: [{label:'-$20K health crisis', type:'neg'},{label:'+Stress', type:'neg'}], quality:'bad' }; }
-        return { log: 'Pushed through. Still standing — for now.', statChanges: [{label:'+Stress', type:'neg'},{label:'At risk', type:'neg'}], quality:'bad' };
+        if (crisis) {
+          gs.savings -= 20000; gs.savings = Math.max(0, gs.savings);
+          gs.health = Math.max(0, gs.health - 15);
+          return { log: 'Burnout triggered a serious health event. $20K in costs. Body forced the break.', statChanges: [{label:'-$20K crisis', type:'neg'},{label:'+20 Stress', type:'neg'},{label:'-35 Health total', type:'neg'}], quality:'bad' };
+        }
+        return { log: 'Pushed through — barely. Running on fumes.', statChanges: [{label:'+20 Stress', type:'neg'},{label:'-20 Health', type:'neg'},{label:'-15 Happiness', type:'neg'}], quality:'bad' };
       }}
     ]
   },
@@ -1607,7 +1703,7 @@ async function startGameplay() {
     home_equity: housing.equity || 0,
     health: 85,
     happiness: 68,
-    stress: career.stress_start * 10,
+    stress: Math.min(50, career.stress_start * 6), // cap starting stress at 50
     job_level: 1,
     has_insurance: postHS.has_college || selections.career === 'bigtech' || selections.career === 'healthcare',
     side_income: 0,
@@ -1723,7 +1819,16 @@ function renderEventCard(evt) {
     career: '💼 Career', health: '❤️ Health', social: '👥 Social'
   }[evt.category] || '🌀 Life Event';
 
-  const storyText = typeof evt.story === 'function' ? evt.story(gpState) : (evt.story || '');
+  const rawStory = typeof evt.story === 'function' ? evt.story(gpState) : (evt.story || '');
+  // Inject stat-awareness context into the story when stats are critical
+  let storyText = rawStory;
+  const statWarnings = [];
+  if (gpState.stress > 75) statWarnings.push('⚠️ You\'re running on empty — stress is very high. Every choice feels heavier right now.');
+  if (gpState.health < 35) statWarnings.push('⚠️ Your health is suffering. Some options may carry extra risk for you.');
+  if (gpState.happiness < 30) statWarnings.push('⚠️ You\'re struggling mentally. It\'s affecting how you see your options.');
+  if (gpState.stress < 25) statWarnings.push('✨ You\'re well-rested and clear-headed. You can think straight.');
+  if (gpState.health > 85) statWarnings.push('✨ Your health is excellent — you have energy to take on more.');
+  if (statWarnings.length > 0) storyText += ' <em style="color:var(--ink3);font-size:13px;">' + statWarnings[0] + '</em>';
 
   const choicesHtml = (evt.choices || []).map(ch => {
     const riskClass = { high: 'risk-high', med: 'risk-med', low: 'risk-low' }[ch.riskLevel] || '';
@@ -1863,15 +1968,21 @@ function updateHUD() {
 }
 
 function renderStatBars() {
+  const h = gpState.health, hp = gpState.happiness, st = gpState.stress;
+  const healthColor    = h > 70 ? '#4A7C59' : h > 40 ? '#C9971C' : '#C4534A';
+  const happColor      = hp > 70 ? '#4A7C59' : hp > 40 ? '#C9971C' : '#C4534A';
+  const stressColor    = st < 35 ? '#4A7C59' : st < 65 ? '#C9971C' : '#C4534A';
   const bars = [
-    { label: '❤️ Health', val: gpState.health, color: '#E02020' },
-    { label: '😊 Happiness', val: gpState.happiness, color: '#C9971C' },
-    { label: '😰 Stress', val: gpState.stress, color: '#6B21A8' },
+    { label: '❤️ Health', val: h, color: healthColor, warn: h < 35 },
+    { label: '😊 Happiness', val: hp, color: happColor, warn: hp < 30 },
+    { label: '😰 Stress', val: st, color: stressColor, warn: st > 75 },
   ];
   document.getElementById('stat-bars').innerHTML = bars.map(b => `
-    <div class="stat-bar-row">
-      <div class="stat-bar-label">${b.label}</div>
-      <div class="stat-bar-outer"><div class="stat-bar-inner" style="width:${Math.round(b.val)}%; background:${b.color};"></div></div>
+    <div class="stat-bar-row" style="${b.warn ? 'background:rgba(196,83,74,0.05);border-radius:6px;padding:2px 4px;' : ''}">
+      <div class="stat-bar-label" style="color:${b.warn ? b.color : ''};">${b.label}</div>
+      <div class="stat-bar-outer">
+        <div class="stat-bar-inner" style="width:${Math.round(b.val)}%; background:${b.color}; transition:width 0.5s ease, background 0.5s ease;"></div>
+      </div>
       <div class="stat-bar-val" style="color:${b.color};">${Math.round(b.val)}</div>
     </div>
   `).join('');
@@ -2008,12 +2119,13 @@ function buildGameResults() {
 }
 
 function calcScore(finalNW, historyOverride, stateOverride) {
-  // Score 1-99. Average skilled run ~70, great play 85-95, exceptional 99.
+  // Score 1-99. Components: NW (55pts) + Wellbeing (25pts) + Debt (7pts) + Investments (6pts) + Hardship (3pts) + Decisions (3pts)
+  // Decisions carry less weight because their outcomes already flow into financial + wellbeing numbers.
   const hist = historyOverride || gpHistory;
   const st   = stateOverride   || gpState;
   let score  = 0;
 
-  // Net Worth (0-55 pts) — calibrated so competent run scores 30-40 here
+  // ── Net Worth (0–55 pts) ──────────────────────────────────────────
   const endAge = st.endAge || st.age;
   let nwThresholds;
   if (endAge <= 28) {
@@ -2029,30 +2141,37 @@ function calcScore(finalNW, historyOverride, stateOverride) {
   }
   score += nwScore;
 
-  // Decision Quality (0-22 pts) — rewards good decisions, moderate bad penalty
-  const greats = hist.filter(h => h.quality === 'great').length;
-  const goods  = hist.filter(h => h.quality === 'good').length;
-  const bads   = hist.filter(h => h.quality === 'bad').length;
-  score += Math.max(0, Math.min(22, Math.round(greats * 3 + goods * 1.5 - bads * 2)));
+  // ── Wellbeing (0–25 pts) ─────────────────────────────────────────
+  // Health, Happiness, and inverted Stress each contribute ~8pts at their max.
+  // Stress is inverted: low stress = high score contribution.
+  const healthScore    = Math.round((st.health / 100) * 9);
+  const happinessScore = Math.round((st.happiness / 100) * 9);
+  const stressScore    = Math.round(((100 - st.stress) / 100) * 7); // stress matters less than H+H
+  score += Math.min(25, healthScore + happinessScore + stressScore);
 
-  // Wellbeing (0-10 pts)
-  const wellbeingAvg = (st.health + st.happiness + (100 - st.stress)) / 3;
-  score += Math.min(10, Math.floor(wellbeingAvg / 11));
+  // ── Debt-Free Bonus (0–7 pts) ────────────────────────────────────
+  if (st.debt === 0)          score += 7;
+  else if (st.debt < 10000)   score += 4;
+  else if (st.debt < 30000)   score += 1;
 
-  // Debt-Free Bonus (0-5 pts)
-  if (st.debt === 0)        score += 5;
-  else if (st.debt < 20000) score += 2;
-
-  // Investment Discipline (0-4 pts)
+  // ── Investment Discipline (0–6 pts) ──────────────────────────────
   if (st.investments > 0 && finalNW > 0) {
     const ir = st.investments / Math.max(1, finalNW + st.debt);
-    if (ir > 0.5)      score += 4;
+    if (ir > 0.6)      score += 6;
+    else if (ir > 0.4) score += 4;
     else if (ir > 0.2) score += 2;
   }
 
-  // Background Hardship Bonus (0-3 pts)
+  // ── Background Hardship Bonus (0–3 pts) ──────────────────────────
   const bgId = selections.background;
   if ((bgId === 'working_class' || bgId === 'challenging') && finalNW > 80000) score += 3;
+
+  // ── Decision Pattern Bonus (0–3 pts) — minor tiebreaker ──────────
+  // Only rewards consistently great decision-making above average, doesn't punish.
+  const total = hist.length || 1;
+  const greatRate = hist.filter(h => h.quality === 'great').length / total;
+  if (greatRate > 0.4) score += 3;
+  else if (greatRate > 0.25) score += 1;
 
   return Math.max(1, Math.min(99, Math.round(score)));
 }
@@ -2141,9 +2260,23 @@ function advanceYearForState(st) {
   }
   if (st.home_equity > 0) st.home_equity *= 1.035;
   st.monthly_expenses *= 1.025;
-  st.stress    = Math.max(0, Math.min(100, st.stress    + (Math.random()*8-3)));
-  st.health    = Math.max(0, Math.min(100, st.health    - (st.stress>70?1.5:0.3) + (Math.random()*3-1.5)));
-  st.happiness = Math.max(0, Math.min(100, st.happiness + (Math.random()*6-3.5)));
+  // Stress: balanced drift (-4 to +4) centered near 0 — can genuinely recover.
+  // High debt or negative cashflow applies pressure; high happiness resists it.
+  const financialPressure = (st.debt > 20000 ? 2 : 0) + (st.savings < 2000 ? 2 : 0);
+  const happinessBuffer   = st.happiness > 70 ? -1 : 0;
+  const stressDelta = (Math.random() * 8 - 4) + financialPressure + happinessBuffer;
+  st.stress = Math.max(0, Math.min(100, st.stress + stressDelta));
+
+  // Health: slow natural recovery when stress is low; stress causes gradual wear.
+  const stressHealthPenalty = st.stress > 75 ? -1.2 : st.stress > 50 ? -0.3 : 0.3;
+  const healthDelta = stressHealthPenalty + (Math.random() * 3 - 1.2);
+  st.health = Math.max(0, Math.min(100, st.health + healthDelta));
+
+  // Happiness: drifts toward a baseline set by financial security and health.
+  const securityBonus   = (st.savings > 10000 ? 1 : 0) + (st.debt === 0 ? 1 : 0);
+  const healthInfluence = st.health < 40 ? -1.5 : st.health > 75 ? 0.5 : 0;
+  const happinessDelta  = (Math.random() * 7 - 3.5) + securityBonus + healthInfluence;
+  st.happiness = Math.max(0, Math.min(100, st.happiness + happinessDelta));
 }
 
 async function runGeminiSimulation() {
@@ -2427,6 +2560,24 @@ function shareResults() {
       setTimeout(() => document.getElementById('share-msg').style.display = 'none', 2500);
     });
   }
+}
+
+// ── Dark Mode ─────────────────────────────────────────────────────
+(function initDarkMode() {
+  const saved = localStorage.getItem('lifesim-theme') || 'light';
+  applyTheme(saved);
+  const btn = document.getElementById('dm-toggle');
+  if (btn) btn.addEventListener('click', () => {
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    localStorage.setItem('lifesim-theme', next);
+  });
+})();
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('dm-toggle');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
 }
 </script>
 </body>

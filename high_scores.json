@@ -33,5 +33,13 @@
     "net_worth": 52230,
     "mode": "standard",
     "timestamp": 1776540427
+  },
+  {
+    "name": "Reese Rivera",
+    "score": 17,
+    "net_worth": -2306,
+    "mode": "standard",
+    "game_length": "10 Years",
+    "timestamp": 1776552725
   }
 ]
