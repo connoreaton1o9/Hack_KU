@@ -98,6 +98,88 @@
 [data-theme="dark"] .backstory-box { background: var(--cream2); }
 [data-theme="dark"] .gemini-reasoning { background: #0A1828; }
 
+/* ── Dark mode: HUD & timeline fixes ── */
+[data-theme="dark"] .game-hud { background: #0D0C0A; }
+[data-theme="dark"] .hud-age-num { color: #F0EBE0; }
+[data-theme="dark"] .hud-age-label { color: rgba(240,235,224,0.5); }
+
+/* Year timeline pips */
+[data-theme="dark"] .year-pip { background: #2A2820; border-color: rgba(240,235,224,0.15); color: #9A9280; }
+[data-theme="dark"] .year-pip.done { background: #2A2210; border-color: var(--gold); color: var(--gold-dark); }
+[data-theme="dark"] .year-pip.done.bad { background: #2A0E0C; border-color: var(--rose); color: var(--rose); }
+[data-theme="dark"] .year-pip.done.great { background: #0E2014; border-color: var(--sage); color: var(--sage); }
+[data-theme="dark"] .year-pip.active { background: var(--gold); border-color: var(--gold-dark); color: #1C1A14; box-shadow: 0 0 0 3px rgba(212,168,50,0.2), 0 0 0 5px rgba(212,168,50,0.1); z-index: 1; position: relative; }
+[data-theme="dark"] .year-pip.future { opacity: 0.3; }
+
+/* Buttons */
+[data-theme="dark"] .btn { background: var(--cream2); color: var(--ink); border-color: var(--border2); }
+[data-theme="dark"] .btn:hover { background: #2A2820; }
+[data-theme="dark"] .btn-primary { background: var(--ink); color: #1C1A14; border-color: var(--ink); }
+[data-theme="dark"] .btn-gold { background: var(--gold); color: #1C1A14; border-color: var(--gold); }
+[data-theme="dark"] .btn-gold:hover { background: var(--gold-dark); border-color: var(--gold-dark); color: white; }
+
+/* Score/results */
+[data-theme="dark"] .score-banner { background: var(--cream2); }
+[data-theme="dark"] .score-dial { background: #2A2820; }
+[data-theme="dark"] .score-dial.green { background: #0E2014; }
+[data-theme="dark"] .score-dial.amber { background: #2A2210; }
+[data-theme="dark"] .score-dial.red { background: #2A0E0C; }
+
+/* Event card category tags — fix hardcoded light colors */
+[data-theme="dark"] .cat-career { background: #1E1428; color: #C084FC; }
+[data-theme="dark"] .cat-health { background: #280A0E; color: #FB7185; }
+[data-theme="dark"] .cat-social { background: #062014; color: #34D399; }
+
+/* Risk tags */
+[data-theme="dark"] .risk-high { background: #2A0E0C; color: var(--rose); }
+[data-theme="dark"] .risk-med { background: #2A2210; color: var(--gold-dark); }
+[data-theme="dark"] .risk-low { background: #0E2014; color: var(--sage); }
+
+/* Stat change pills */
+[data-theme="dark"] .sc-pos { background: #0E2014; color: var(--sage); }
+[data-theme="dark"] .sc-neg { background: #2A0E0C; color: var(--rose); }
+[data-theme="dark"] .sc-neutral { background: #0A1828; color: var(--sky); }
+
+/* Tags on choice cards */
+[data-theme="dark"] .tag-green { background: #0E2014; color: var(--sage); }
+[data-theme="dark"] .tag-red { background: #2A0E0C; color: var(--rose); }
+[data-theme="dark"] .tag-amber { background: #2A2210; color: var(--gold-dark); }
+[data-theme="dark"] .tag-blue { background: #0A1828; color: var(--sky); }
+
+/* Outcome reveal headers */
+[data-theme="dark"] .outcome-reveal-header.good    { background: #0E2014; color: #6EE7A0; }
+[data-theme="dark"] .outcome-reveal-header.bad     { background: #2A0E0C; color: #FCA5A5; }
+[data-theme="dark"] .outcome-reveal-header.neutral { background: #0A1828; color: #93C5FD; }
+[data-theme="dark"] .outcome-reveal-header.warning { background: #2A2210; color: var(--gold-dark); }
+
+/* Consequence banners */
+[data-theme="dark"] .consequence-banner.positive { background: #0E2014; color: #6EE7A0; border-color: rgba(90,156,106,0.3); }
+[data-theme="dark"] .consequence-banner.negative { background: #2A0E0C; color: #FCA5A5; border-color: rgba(212,99,90,0.3); }
+[data-theme="dark"] .consequence-banner.neutral  { background: #0A1828; color: #93C5FD; border-color: rgba(74,142,208,0.3); }
+[data-theme="dark"] .consequence-banner.warning  { background: #2A2210; color: var(--gold-dark); border-color: rgba(212,168,50,0.3); }
+
+/* Outcome cards */
+[data-theme="dark"] .outcome-card.good { background: #0E2014; border-color: rgba(90,156,106,0.3); }
+[data-theme="dark"] .outcome-card.mid  { background: #2A2210; border-color: rgba(212,168,50,0.3); }
+[data-theme="dark"] .outcome-card.bad  { background: #2A0E0C; border-color: rgba(212,99,90,0.3); }
+[data-theme="dark"] .outcome-card.good .outcome-title { color: var(--sage); }
+[data-theme="dark"] .outcome-card.mid  .outcome-title { color: var(--gold-dark); }
+[data-theme="dark"] .outcome-card.bad  .outcome-title { color: var(--rose); }
+[data-theme="dark"] .outcome-card.good .outcome-body { color: #6EE7A0; }
+[data-theme="dark"] .outcome-card.mid  .outcome-body { color: var(--gold-dark); }
+[data-theme="dark"] .outcome-card.bad  .outcome-body { color: #FCA5A5; }
+
+/* score-saved-wrap — inline style color override */
+[data-theme="dark"] #score-saved-wrap { background: #0E2014 !important; border-color: rgba(90,156,106,0.3) !important; color: #6EE7A0 !important; }
+
+/* Best moves section */
+[data-theme="dark"] .best-moves-card { background: #0A1828; border-color: rgba(74,142,208,0.25); }
+
+/* scores table */
+[data-theme="dark"] .scores-table th { color: var(--ink3); border-color: var(--border2); }
+[data-theme="dark"] .scores-table td { border-color: var(--border); }
+[data-theme="dark"] .scores-table tr:hover td { background: #2A2820; }
+
 /* Dark mode toggle button */
 .dm-toggle {
   position: fixed;
@@ -320,17 +402,19 @@ body::before {
 .year-timeline::-webkit-scrollbar { display: none; }
 .year-pip {
   flex-shrink: 0;
-  width: 20px; height: 20px; border-radius: 4px;
+  width: 26px; height: 22px; border-radius: 4px;
   background: var(--cream2); border: 1px solid var(--border);
   display: flex; align-items: center; justify-content: center;
-  font-size: 8px; color: var(--ink3); font-weight: 700;
+  font-size: 8.5px; color: var(--ink3); font-weight: 700;
   transition: all 0.3s;
   cursor: default;
+  overflow: hidden;
+  white-space: nowrap;
 }
 .year-pip.done { background: var(--gold-light); border-color: var(--gold); color: var(--gold-dark); }
 .year-pip.done.bad { background: var(--rose-light); border-color: var(--rose); color: var(--rose); }
 .year-pip.done.great { background: var(--sage-light); border-color: var(--sage); color: var(--sage); }
-.year-pip.active { background: var(--gold); border-color: var(--gold-dark); color: white; transform: scale(1.3); box-shadow: 0 0 0 4px var(--gold-light); }
+.year-pip.active { background: var(--gold); border-color: var(--gold-dark); color: white; box-shadow: 0 0 0 3px var(--gold-light), 0 0 0 4px var(--gold); z-index: 1; position: relative; }
 .year-pip.future { opacity: 0.35; }
 
 /* ══ YEAR EVENT CARD ══ */
@@ -386,9 +470,9 @@ body::before {
   font-size: 13px; font-weight: 600;
   display: flex; align-items: center; gap: 8px;
 }
-.consequence-banner.positive { background: var(--sage-light); color: #1A5E35; border: 1px solid rgba(74,124,89,0.25); }
-.consequence-banner.negative { background: var(--rose-light); color: #8B1A14; border: 1px solid rgba(196,83,74,0.25); }
-.consequence-banner.neutral { background: var(--sky-light); color: #1A4570; border: 1px solid rgba(43,108,176,0.2); }
+.consequence-banner.positive { background: var(--sage-light); color: var(--sage); border: 1px solid rgba(74,124,89,0.25); }
+.consequence-banner.negative { background: var(--rose-light); color: var(--rose); border: 1px solid rgba(196,83,74,0.25); }
+.consequence-banner.neutral { background: var(--sky-light); color: var(--sky); border: 1px solid rgba(43,108,176,0.2); }
 .consequence-banner.warning { background: var(--gold-light); color: var(--gold-dark); border: 1px solid rgba(201,151,28,0.3); }
 
 /* Year choice buttons — BitLife style */
@@ -445,9 +529,9 @@ body::before {
   font-size: 1.1rem; font-weight: 700;
   display: flex; align-items: center; gap: 10px;
 }
-.outcome-reveal-header.good { background: var(--sage-light); color: #1A5E35; }
-.outcome-reveal-header.bad { background: var(--rose-light); color: #8B1A14; }
-.outcome-reveal-header.neutral { background: var(--sky-light); color: #1A4570; }
+.outcome-reveal-header.good { background: var(--sage-light); color: var(--sage); }
+.outcome-reveal-header.bad { background: var(--rose-light); color: var(--rose); }
+.outcome-reveal-header.neutral { background: var(--sky-light); color: var(--sky); }
 .outcome-reveal-header.warning { background: var(--gold-light); color: var(--gold-dark); }
 .outcome-reveal-body { padding: 1rem 1.25rem; font-size: 14px; color: var(--ink2); line-height: 1.7; }
 .stat-changes {
@@ -592,9 +676,9 @@ body::before {
 .outcome-card.mid .outcome-title { color: var(--gold-dark); }
 .outcome-card.bad .outcome-title { color: var(--rose); }
 .outcome-body { font-size: 13px; line-height: 1.6; }
-.outcome-card.good .outcome-body { color: #2d6b42; }
+.outcome-card.good .outcome-body { color: var(--sage); }
 .outcome-card.mid .outcome-body { color: var(--gold-dark); }
-.outcome-card.bad .outcome-body { color: #8B3128; }
+.outcome-card.bad .outcome-body { color: var(--rose); }
 
 .fade-in { animation: fadeIn 0.4s ease both; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -801,11 +885,11 @@ body::before {
   <div class="divider"></div>
   <p class="section-title">Insights</p>
   <div class="insights-grid" id="insights-grid"></div>
-  <div id="score-entry-wrap" class="score-entry" style="display:none;">
-    <label id="score-entry-label">📝 Enter your name for the leaderboard</label>
-    <input type="text" id="score-name-input" placeholder="Your name…" maxlength="30">
-    <button class="btn btn-gold" onclick="submitHighScore()">Save to Leaderboard</button>
-    <span id="score-saved-msg" style="font-size:13px; color:var(--sage); margin-left:12px; display:none;">Saved! ✓</span>
+  <div class="divider"></div>
+  <p class="section-title">🎯 Optimal Play Guide</p>
+  <div id="best-moves-section" style="margin-bottom:1.5rem;"></div>
+  <div id="score-saved-wrap" style="display:none; background:var(--sage-light); border:1px solid rgba(74,124,89,0.25); border-radius:var(--radius-sm); padding:12px 16px; margin-bottom:1rem; font-size:14px; color:#1A5E35; font-weight:600;">
+    🏆 Score automatically saved to leaderboard! <span id="score-saved-name"></span>
   </div>
   <div class="results-nav">
     <button class="btn btn-primary" onclick="restartGame()">Play Again</button>
@@ -1482,6 +1566,33 @@ function renderChoiceGrid(containerId, choices, type, onFn) {
   `).join('');
 }
 
+function renderChoiceGridWithTraits(containerId, choices, type, onFn, showTraits) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = choices.map(c => {
+    const traitHtml = showTraits && c.trait_desc ? `
+      <div style="margin-top:8px; padding:6px 8px; background:rgba(201,151,28,0.08); border-left:3px solid var(--gold); border-radius:0 4px 4px 0; font-size:11.5px; color:var(--ink2); line-height:1.5;">
+        <span style="font-weight:700; color:var(--gold-dark);">✦ ${(c.trait_bonus||'').replace(/_/g,' ').toUpperCase()}:</span> ${c.trait_desc}
+      </div>` : '';
+    const salaryHtml = showTraits && c.salary ? `
+      <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
+        <span style="font-size:11px; font-weight:700; color:var(--sage);">$${Math.round(c.salary/1000)}K/yr start</span>
+        ${c.stress_start ? `<span style="font-size:11px; color:var(--rose);">Stress ${c.stress_start}/10</span>` : ''}
+        ${c.growth ? `<span style="font-size:11px; color:var(--sky);">Growth ${c.growth}/10</span>` : ''}
+      </div>` : '';
+    return `
+      <div class="choice-card ${selections[type] === c.id ? 'selected' : ''}" data-choice-id="${c.id}" onclick="${onFn}('${c.id}')">
+        <div class="selected-mark">✓</div>
+        ${c.icon ? `<span class="card-icon">${c.icon}</span>` : ''}
+        <div class="card-name">${c.title}</div>
+        <div class="card-desc">${c.desc}</div>
+        <div class="tags">${(c.tags||[]).map(([l,t])=>`<span class="tag tag-${t}">${l}</span>`).join('')}</div>
+        ${salaryHtml}
+        ${traitHtml}
+      </div>`;
+  }).join('');
+}
+
 // ════════════════════════════════════════════════════════════════
 // MODE SELECTION
 // ════════════════════════════════════════════════════════════════
@@ -1578,8 +1689,24 @@ function goToSetup() {
 let setupStep = 0;
 const SETUP_STEPS = ['post_hs', 'career', 'housing'];
 
-function startSetupScreen() {
+let randomizedJobs = null; // Gemini-generated jobs for this run
+
+async function startSetupScreen() {
   setupStep = 0;
+  // Fetch randomized jobs from Gemini once per game
+  randomizedJobs = null;
+  const postHS = POST_HS_CHOICES.find(c => c.id === selections.post_hs);
+  try {
+    showLoading('Generating career options…', 'Gemini is crafting unique jobs for your run…');
+    const resp = await fetch('/api/generate-random-jobs', { method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ has_college: postHS ? postHS.has_college : true }) });
+    const data = await resp.json();
+    if (data.jobs && data.jobs.length >= 4) randomizedJobs = data.jobs;
+    hideLoading();
+  } catch(e) {
+    hideLoading();
+    randomizedJobs = null;
+  }
   renderSetupStep();
   show('screen-setup');
 }
@@ -1597,7 +1724,11 @@ function renderSetupStep() {
     gridId = 'setup-grid';
   } else if (step === 'career') {
     const postHS = POST_HS_CHOICES.find(c => c.id === selections.post_hs);
-    choices = CAREER_CHOICES.filter(c => !c.requires_college || postHS.has_college);
+    // Use Gemini-generated jobs if available, filtered by college requirement
+    const baseJobs = randomizedJobs
+      ? randomizedJobs.filter(c => !c.requires_college || postHS.has_college)
+      : CAREER_CHOICES.filter(c => !c.requires_college || postHS.has_college);
+    choices = baseJobs;
     title = 'What will you do for work?';
     sub = postHS.has_college ? "Diploma in hand. The job market awaits." : "Time to build your career path.";
     gridId = 'setup-grid';
@@ -1621,10 +1752,11 @@ function renderSetupStep() {
     </div>
   `;
 
-  renderChoiceGrid(gridId, choices, step === 'post_hs' ? 'post_hs' : step === 'career' ? 'career' : 'housing',
-    step === 'post_hs' ? 'selectSetupPostHS' : step === 'career' ? 'selectSetupCareer' : 'selectSetupHousing');
+  const selKey = step === 'post_hs' ? 'post_hs' : step === 'career' ? 'career' : 'housing';
+  const onFn = step === 'post_hs' ? 'selectSetupPostHS' : step === 'career' ? 'selectSetupCareer' : 'selectSetupHousing';
+  renderChoiceGridWithTraits(gridId, choices, selKey, onFn, step === 'career');
 
-  if (selections[step === 'post_hs' ? 'post_hs' : step]) {
+  if (selections[selKey]) {
     document.getElementById('setup-next-btn').disabled = false;
   }
 }
@@ -1676,7 +1808,9 @@ async function startGameplay() {
 
   const bg = FAMILY_BACKGROUNDS.find(b => b.id === selections.background);
   const postHS = POST_HS_CHOICES.find(c => c.id === selections.post_hs);
-  const career = CAREER_CHOICES.find(c => c.id === selections.career);
+  // Use randomized job if available, else fall back to static
+  const careerPool = randomizedJobs || CAREER_CHOICES;
+  const career = careerPool.find(c => c.id === selections.career) || CAREER_CHOICES.find(c => c.id === selections.career) || CAREER_CHOICES[0];
   const housing = HOUSING_CHOICES.find(c => c.id === selections.housing);
   const lenCfg = GAME_LENGTHS[gameLength];
 
@@ -1705,7 +1839,7 @@ async function startGameplay() {
     happiness: 68,
     stress: Math.min(50, career.stress_start * 6), // cap starting stress at 50
     job_level: 1,
-    has_insurance: postHS.has_college || selections.career === 'bigtech' || selections.career === 'healthcare',
+    has_insurance: postHS.has_college || career.requires_college || ['bigtech','healthcare'].includes(selections.career),
     side_income: 0,
     has_side_hustle: false,
     has_car: true,
@@ -1948,8 +2082,9 @@ function calcNetWorth() {
 // ── HUD + visual updates ──────────────────────────────
 function updateHUD() {
   document.getElementById('hud-name').textContent = gpState.name || charData.name || 'You';
-  const career = CAREER_CHOICES.find(c => c.id === selections.career);
-  document.getElementById('hud-meta').textContent = (career?.title || 'Working') + ' · $' + Math.round(gpState.salary/1000) + 'K/yr';
+  const careerPool = randomizedJobs || CAREER_CHOICES;
+  const career = careerPool.find(c => c.id === selections.career) || CAREER_CHOICES.find(c => c.id === selections.career);
+  document.getElementById('hud-meta').textContent = (career?.title || gpState.career_title || 'Working') + ' · $' + Math.round(gpState.salary/1000) + 'K/yr';
   document.getElementById('hud-age').textContent = gpState.age;
 
   document.getElementById('hud-stats').innerHTML = [
@@ -1969,9 +2104,9 @@ function updateHUD() {
 
 function renderStatBars() {
   const h = gpState.health, hp = gpState.happiness, st = gpState.stress;
-  const healthColor    = h > 70 ? '#4A7C59' : h > 40 ? '#C9971C' : '#C4534A';
-  const happColor      = hp > 70 ? '#4A7C59' : hp > 40 ? '#C9971C' : '#C4534A';
-  const stressColor    = st < 35 ? '#4A7C59' : st < 65 ? '#C9971C' : '#C4534A';
+  const healthColor    = h > 70 ? 'var(--sage)' : h > 40 ? 'var(--gold)' : 'var(--rose)';
+  const happColor      = hp > 70 ? 'var(--sage)' : hp > 40 ? 'var(--gold)' : 'var(--rose)';
+  const stressColor    = st < 35 ? 'var(--sage)' : st < 65 ? 'var(--gold)' : 'var(--rose)';
   const bars = [
     { label: '❤️ Health', val: h, color: healthColor, warn: h < 35 },
     { label: '😊 Happiness', val: hp, color: happColor, warn: hp < 30 },
@@ -2105,14 +2240,13 @@ function buildGameResults() {
   ].map(([l,c,b]) => `<div class="insight-card"><div class="insight-label ${c}">${l}</div><div class="insight-body">${b}</div></div>`).join('');
 
   if (gameMode === 'standard' || gameMode === 'random') {
-    document.getElementById('score-entry-wrap').style.display = 'block';
-    document.getElementById('score-name-input').value = gpState.name || '';
-    document.getElementById('score-entry-label').textContent = gameMode === 'random'
-      ? '📝 Enter your name for the Random Life leaderboard'
-      : '📝 Enter your name for the leaderboard';
-  } else {
-    document.getElementById('score-entry-wrap').style.display = 'none';
+    // Auto-save score using character name
+    const playerName = gpState.name || charData.name || 'Anonymous';
+    autoSaveHighScore(playerName, score, finalNW);
   }
+
+  // Build best moves section
+  buildBestMovesSection('best-moves-section', gpHistory, gpEvents);
 
   window._lastResult = { score, final_nw: finalNW, final_salary: gpState.salary, game_length: GAME_LENGTHS[gameLength]?.label || gameLength };
   show('screen-results');
@@ -2120,20 +2254,22 @@ function buildGameResults() {
 
 function calcScore(finalNW, historyOverride, stateOverride) {
   // Score 1-99. Components: NW (55pts) + Wellbeing (25pts) + Debt (7pts) + Investments (6pts) + Hardship (3pts) + Decisions (3pts)
-  // Decisions carry less weight because their outcomes already flow into financial + wellbeing numbers.
   const hist = historyOverride || gpHistory;
   const st   = stateOverride   || gpState;
   let score  = 0;
 
-  // ── Net Worth (0–55 pts) ──────────────────────────────────────────
+  // ── Net Worth (0–55 pts) — calibrated per game length ──────────────
   const endAge = st.endAge || st.age;
   let nwThresholds;
   if (endAge <= 28) {
-    nwThresholds = [[-999999,0],[-5000,3],[0,8],[15000,16],[40000,26],[80000,36],[150000,46],[250000,55]];
+    // 10-year game: realistic achievable NW at 28 is $5K–$60K for most
+    nwThresholds = [[-999999,0],[-2000,4],[0,12],[5000,20],[15000,28],[30000,37],[55000,46],[90000,55]];
   } else if (endAge <= 38) {
-    nwThresholds = [[-999999,0],[-10000,3],[0,8],[30000,14],[80000,22],[150000,30],[250000,38],[400000,46],[600000,55]];
+    // 20-year game: realistic range $0–$200K
+    nwThresholds = [[-999999,0],[-5000,4],[0,10],[20000,18],[60000,26],[120000,34],[200000,42],[320000,55]];
   } else {
-    nwThresholds = [[-999999,0],[0,5],[100000,12],[300000,20],[600000,30],[1000000,38],[1500000,46],[2200000,55]];
+    // 47-year game: realistic range $100K–$1.5M+
+    nwThresholds = [[-999999,0],[0,5],[80000,12],[250000,20],[500000,30],[900000,38],[1400000,46],[2000000,55]];
   }
   let nwScore = 0;
   for (const [threshold, pts] of nwThresholds) {
@@ -2142,11 +2278,9 @@ function calcScore(finalNW, historyOverride, stateOverride) {
   score += nwScore;
 
   // ── Wellbeing (0–25 pts) ─────────────────────────────────────────
-  // Health, Happiness, and inverted Stress each contribute ~8pts at their max.
-  // Stress is inverted: low stress = high score contribution.
   const healthScore    = Math.round((st.health / 100) * 9);
   const happinessScore = Math.round((st.happiness / 100) * 9);
-  const stressScore    = Math.round(((100 - st.stress) / 100) * 7); // stress matters less than H+H
+  const stressScore    = Math.round(((100 - st.stress) / 100) * 7);
   score += Math.min(25, healthScore + happinessScore + stressScore);
 
   // ── Debt-Free Bonus (0–7 pts) ────────────────────────────────────
@@ -2164,10 +2298,10 @@ function calcScore(finalNW, historyOverride, stateOverride) {
 
   // ── Background Hardship Bonus (0–3 pts) ──────────────────────────
   const bgId = selections.background;
-  if ((bgId === 'working_class' || bgId === 'challenging') && finalNW > 80000) score += 3;
+  const hardshipNWTarget = endAge <= 28 ? 15000 : endAge <= 38 ? 50000 : 200000;
+  if ((bgId === 'working_class' || bgId === 'challenging') && finalNW > hardshipNWTarget) score += 3;
 
-  // ── Decision Pattern Bonus (0–3 pts) — minor tiebreaker ──────────
-  // Only rewards consistently great decision-making above average, doesn't punish.
+  // ── Decision Pattern Bonus (0–3 pts) ──────────────────────────────
   const total = hist.length || 1;
   const greatRate = hist.filter(h => h.quality === 'great').length / total;
   if (greatRate > 0.4) score += 3;
@@ -2205,6 +2339,16 @@ async function askGeminiChoice(evt, gs, history) {
   }));
   const storyText = typeof evt.story === 'function' ? evt.story(gs) : (evt.story || '');
 
+  // 25% of the time Gemini makes a suboptimal "human-like" mistake — keeps it beatable
+  const geminiMakesError = Math.random() < 0.25;
+  if (geminiMakesError && (evt.choices || []).length > 1) {
+    // Pick a non-optimal choice: prefer high-risk or negatively-consequenced options
+    const suboptimal = (evt.choices || []).find(c => c.riskLevel === 'high') ||
+                       (evt.choices || []).find(c => c.consequenceText && c.consequenceText.includes('-')) ||
+                       (evt.choices || [])[Math.floor(Math.random() * (evt.choices||[]).length)];
+    return { choice: suboptimal?.id, reasoning: 'Took a calculated risk that didn\'t pay off.' };
+  }
+
   try {
     const resp = await fetch('/api/gemini-event-choice', {
       method: 'POST',
@@ -2238,7 +2382,8 @@ async function askGeminiChoice(evt, gs, history) {
 }
 
 function advanceYearForState(st) {
-  const careerData = CAREER_CHOICES.find(c => c.id === selections.career);
+  const careerPool = randomizedJobs || CAREER_CHOICES;
+  const careerData = careerPool.find(c => c.id === selections.career) || CAREER_CHOICES.find(c => c.id === selections.career);
   const salaryGrowth = 0.02 + (careerData?.growth || 5) * 0.003;
   st.salary *= (1 + salaryGrowth);
   const grossIncome = st.salary + (st.side_income || 0);
@@ -2336,23 +2481,34 @@ function buildBeatGeminiResults() {
     `Gemini played ${geminiHistory.length} events: ${gGood} strong decisions, ${gBad} poor decisions. Final net worth: ${fmtK(geminiNW)}.`;
 
   // Year-by-year comparison
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   const allAges = [...new Set([...gpHistory.map(h=>h.age), ...geminiHistory.map(h=>h.age)])].sort((a,b)=>a-b);
   const yearRowsHtml = allAges.map(age => {
     const pH = gpHistory.find(h=>h.age===age);
     const gH = geminiHistory.find(h=>h.age===age);
     const qi = q => q==='great'?'🌟':q==='good'?'✅':q==='bad'?'💥':'⚖️';
-    const pbg = pH ? (pH.quality==='bad'?'var(--rose-light)':pH.quality==='great'?'#ECFDF5':'white') : 'var(--cream2)';
-    const gbg = gH ? (gH.quality==='bad'?'var(--rose-light)':gH.quality==='great'?'#ECFDF5':'var(--sky-light)') : 'var(--cream2)';
+    // Player cell background — theme-aware
+    let pbg, ptextColor;
+    if (!pH) { pbg = 'var(--cream2)'; ptextColor = 'var(--ink)'; }
+    else if (pH.quality==='bad')   { pbg = 'var(--rose-light)';  ptextColor = 'var(--rose)'; }
+    else if (pH.quality==='great') { pbg = 'var(--sage-light)';  ptextColor = 'var(--sage)'; }
+    else                           { pbg = 'var(--cream2)';      ptextColor = 'var(--ink)'; }
+    // Gemini cell background — theme-aware
+    let gbg, gtextColor;
+    if (!gH) { gbg = 'var(--cream2)'; gtextColor = 'var(--ink)'; }
+    else if (gH.quality==='bad')   { gbg = 'var(--rose-light)';  gtextColor = 'var(--rose)'; }
+    else if (gH.quality==='great') { gbg = 'var(--sage-light)';  gtextColor = 'var(--sage)'; }
+    else                           { gbg = 'var(--sky-light)';   gtextColor = 'var(--sky)'; }
     return `<div style="display:grid;grid-template-columns:52px 1fr 1fr;gap:6px;align-items:start;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border);">
       <div style="font-size:12px;font-weight:700;color:var(--ink3);padding-top:6px;">Age ${age}</div>
       <div style="background:${pbg};border-radius:8px;padding:8px 10px;border:1px solid var(--border);">
-        <div style="font-size:10px;font-weight:700;color:var(--ink3);margin-bottom:3px;">${pH?qi(pH.quality)+' YOU — '+pH.event:'—'}</div>
-        <div style="font-size:12px;font-weight:600;">${pH?pH.choice:'No event this year'}</div>
+        <div style="font-size:10px;font-weight:700;color:${ptextColor};margin-bottom:3px;">${pH?qi(pH.quality)+' YOU — '+pH.event:'—'}</div>
+        <div style="font-size:12px;font-weight:600;color:var(--ink);">${pH?pH.choice:'No event this year'}</div>
         ${pH?`<div style="font-size:11px;color:var(--ink3);margin-top:2px;">${pH.result}</div>`:''}
       </div>
       <div style="background:${gbg};border-radius:8px;padding:8px 10px;border:1px solid rgba(43,108,176,0.18);">
-        <div style="font-size:10px;font-weight:700;color:var(--sky);margin-bottom:3px;">${gH?qi(gH.quality)+' 🤖 GEMINI — '+gH.event:'—'}</div>
-        <div style="font-size:12px;font-weight:600;">${gH?gH.choice:'No event this year'}</div>
+        <div style="font-size:10px;font-weight:700;color:${gtextColor};margin-bottom:3px;">${gH?qi(gH.quality)+' 🤖 GEMINI — '+gH.event:'—'}</div>
+        <div style="font-size:12px;font-weight:600;color:var(--ink);">${gH?gH.choice:'No event this year'}</div>
         ${gH&&gH.reasoning?`<div style="font-size:11px;color:var(--sky);margin-top:2px;font-style:italic;">"${gH.reasoning}"</div>`:''}
         ${gH?`<div style="font-size:11px;color:var(--ink3);margin-top:2px;">${gH.result}</div>`:''}
       </div>
@@ -2383,17 +2539,17 @@ function buildBeatGeminiResults() {
     </div>
   </div>`;
 
-  const breakdownHtml = `<div style="background:white;border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1.5rem;">
+  const breakdownHtml = `<div style="background:var(--cream2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1.5rem;">
     <p class="section-title" style="margin-bottom:8px;">📊 Score Breakdown</p>
     <p style="font-size:12px;color:var(--ink3);margin-bottom:10px;">Net Worth (55%) + Decisions (22%) + Wellbeing (10%) + Debt (5%) + Investments (4%) + Background (3%) — max 99</p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <div style="background:${playerWon?'var(--sage-light)':'var(--cream2)'};border-radius:8px;padding:10px;font-size:13px;">
-        <strong>You — ${playerComp}/99</strong><br>
+      <div style="background:${playerWon?'var(--sage-light)':'var(--cream2)'};border-radius:8px;padding:10px;font-size:13px;color:var(--ink);border:1px solid var(--border);">
+        <strong style="color:var(--ink);">You — ${playerComp}/99</strong><br>
         Net Worth: ${fmtK(playerNW)}<br>
         ✅ Strong: ${gpHistory.filter(h=>h.quality==='great'||h.quality==='good').length} &nbsp; 💥 Poor: ${gpHistory.filter(h=>h.quality==='bad').length}
       </div>
-      <div style="background:${!playerWon?'var(--sky-light)':'var(--cream2)'};border-radius:8px;padding:10px;font-size:13px;">
-        <strong>Gemini — ${geminiComp}/99</strong><br>
+      <div style="background:${!playerWon?'var(--sky-light)':'var(--cream2)'};border-radius:8px;padding:10px;font-size:13px;color:var(--ink);border:1px solid var(--border);">
+        <strong style="color:var(--ink);">Gemini — ${geminiComp}/99</strong><br>
         Net Worth: ${fmtK(geminiNW)}<br>
         ✅ Strong: ${gGood} &nbsp; 💥 Poor: ${gBad}
       </div>
@@ -2406,7 +2562,19 @@ function buildBeatGeminiResults() {
     <div class="divider"></div>
     <p class="section-title" style="margin-bottom:12px;">Year-by-Year Decision Comparison</p>
     <div style="margin-bottom:1.5rem;">${yearRowsHtml || '<p style="color:var(--ink3);font-size:13px;">No events to compare.</p>'}</div>
+    <div class="divider"></div>
+    <p class="section-title" style="margin-bottom:12px;">🎯 Optimal Play Guide</p>
+    <div id="best-moves-section-bg" style="margin-bottom:1.5rem;"></div>
   `;
+
+  // Build best moves for beat gemini screen
+  buildBestMovesSection('best-moves-section-bg', gpHistory, gpEvents);
+
+  // Auto-save if player won
+  if (playerWon) {
+    const playerName = gpState.name || charData.name || 'Player';
+    autoSaveHighScore(playerName, playerComp, playerNW);
+  }
 
   show('screen-beat-gemini');
 }
@@ -2420,15 +2588,32 @@ function buildChart(data, canvasId) {
   const finalNW = values[values.length - 1] || 0;
   const lc = finalNW >= 0 ? '#4A7C59' : '#C4534A';
   const fc = finalNW >= 0 ? 'rgba(74,124,89,0.08)' : 'rgba(196,83,74,0.08)';
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const tickColor = isDark ? '#7A7260' : '#8A836E';
+  const gridColor = isDark ? 'rgba(240,235,224,0.06)' : 'rgba(28,26,20,0.05)';
+  // Reduce label density for long games to prevent overlap
+  const maxTicks = data.length > 30 ? 6 : data.length > 15 ? 8 : 10;
   chartInstance = new Chart(canvas.getContext('2d'), {
     type: 'line',
-    data: { labels, datasets: [{ data: values, borderColor: lc, backgroundColor: fc, borderWidth: 2.5, pointRadius: 2, pointBackgroundColor: lc, fill: true, tension: 0.4 }] },
+    data: { labels, datasets: [{ data: values, borderColor: lc, backgroundColor: fc, borderWidth: 2.5, pointRadius: data.length > 30 ? 1 : 2, pointBackgroundColor: lc, fill: true, tension: 0.4 }] },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${fmtK(ctx.raw)}` } } },
       scales: {
-        x: { grid: { display: false }, ticks: { font: { size: 11 }, maxTicksLimit: 8, color: '#8A836E' } },
-        y: { grid: { color: 'rgba(28,26,20,0.05)' }, ticks: { font: { size: 11 }, callback: v => fmtK(v), color: '#8A836E' } }
+        x: {
+          grid: { display: false },
+          ticks: {
+            font: { size: data.length > 30 ? 9 : 11 },
+            maxTicksLimit: maxTicks,
+            maxRotation: 0,
+            autoSkip: true,
+            color: tickColor
+          }
+        },
+        y: {
+          grid: { color: gridColor },
+          ticks: { font: { size: 11 }, callback: v => fmtK(v), color: tickColor }
+        }
       }
     }
   });
@@ -2488,14 +2673,102 @@ async function showHighScores() {
   show('screen-highscores');
 }
 
-async function submitHighScore() {
-  const name = document.getElementById('score-name-input').value.trim();
-  if (!name) return;
-  const r = window._lastResult;
-  if (!r) return;
-  await fetch('/api/high-scores', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, score: r.score, net_worth: r.final_nw, mode: gameMode, game_length: GAME_LENGTHS[gameLength]?.label || gameLength }) });
-  document.getElementById('score-saved-msg').style.display = 'inline';
-  showToast('Score saved! 🏆');
+async function autoSaveHighScore(name, score, finalNW) {
+  try {
+    await fetch('/api/high-scores', { method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name, score, net_worth: finalNW, mode: gameMode, game_length: GAME_LENGTHS[gameLength]?.label || gameLength }) });
+    const wrap = document.getElementById('score-saved-wrap');
+    const nameEl = document.getElementById('score-saved-name');
+    if (wrap) {
+      if (nameEl) nameEl.textContent = `— ${name}, Score: ${score}/99`;
+      wrap.style.display = 'block';
+    }
+  } catch(e) { console.log('Score save failed:', e); }
+}
+
+function buildBestMovesSection(containerId, history, events) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const opportunityMisses = [];
+  events.forEach(evt => {
+    if (!evt.choices || !evt.title || evt.choices.length < 2) return;
+    const playerDecision = history.find(h => h.age === evt.age && h.event === evt.title);
+    if (!playerDecision) return;
+
+    // Find the best choice by heuristic scoring
+    const scoredChoices = evt.choices.map(ch => {
+      let s = 0;
+      if (ch.riskLevel === 'low') s += 2;
+      else if (ch.riskLevel === 'med') s += 1;
+      else if (ch.riskLevel === 'high') s -= 1;
+      if (ch.consequenceText && ch.consequenceText.includes('+')) s += 2;
+      if (ch.consequenceText && ch.consequenceText.includes('-')) s -= 1;
+      return { ch, score: s };
+    });
+    scoredChoices.sort((a, b) => b.score - a.score);
+    const bestChoice = scoredChoices[0]?.ch;
+    const worstChoice = scoredChoices[scoredChoices.length - 1]?.ch;
+
+    // Match player's choice by title (what's stored in history)
+    const playerChoiceTitle = playerDecision.choice;
+    const playerChoiceObj = evt.choices.find(c => c.title === playerChoiceTitle);
+
+    // Only flag as a miss if player chose something worse than the best option
+    const playerScore = scoredChoices.find(s => s.ch === playerChoiceObj)?.score ?? 0;
+    const bestScore = scoredChoices[0]?.score ?? 0;
+
+    if (bestChoice && playerChoiceObj && bestChoice.id !== playerChoiceObj.id && bestScore > playerScore) {
+      opportunityMisses.push({
+        age: evt.age,
+        event: evt.title,
+        yourChoice: playerChoiceTitle,
+        yourResult: playerDecision.result || '',
+        betterChoice: bestChoice.title,
+        tip: bestChoice.consequenceText || bestChoice.desc,
+        quality: playerDecision.quality
+      });
+    }
+  });
+
+  // General strategy tips based on final game state
+  const generalTips = [];
+  const finalNW = calcNetWorth();
+  const endAge = gpState.endAge || gpState.age;
+  if (gpState.investments < gpState.savings && gpState.savings > 5000) generalTips.push('💡 You kept too much in savings vs investments. Index funds historically return ~7%/yr — cash loses to inflation.');
+  if (gpState.debt > 0 && gpState.investments > gpState.debt * 2) generalTips.push('💡 With high investments vs debt, you could have paid off debt faster — high-interest debt (6.5%+) often beats market returns.');
+  if (gpState.stress > 70) generalTips.push('⚠️ High stress erodes health and happiness, which costs points. Choosing lower-stress options earlier compounds positively.');
+  if (history.filter(h=>h.quality==='great').length < 2) generalTips.push('💡 In future runs: negotiating salary, investing windfalls immediately, and automating savings first are nearly always the highest-value choices.');
+  if (gpState.has_side_hustle) generalTips.push('✅ Side hustle was a strong move — the recurring income compounds significantly over time.');
+  if (!gpState.has_side_hustle && endAge > 30) generalTips.push('💡 A side hustle (even small) adds passive income that compounds — just 12 decisions of $500/mo = $6K/yr.');
+
+  const qualityIcon = q => q === 'great' ? '🌟' : q === 'good' ? '✅' : q === 'bad' ? '💥' : '⚖️';
+
+  const missesHtml = opportunityMisses.slice(0, 5).map(m => `
+    <div style="display:flex;gap:10px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--border);">
+      <div style="font-size:11px;font-weight:700;color:var(--ink3);min-width:44px;padding-top:2px;">Age ${m.age}</div>
+      <div style="flex:1;">
+        <div style="font-size:12px;color:var(--ink3);font-weight:600;margin-bottom:4px;">${m.event}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--rose);">${qualityIcon(m.quality)} You chose: ${m.yourChoice}</div>
+        ${m.yourResult ? `<div style="font-size:11px;color:var(--ink3);margin-top:2px;">→ ${m.yourResult}</div>` : ''}
+        <div style="font-size:13px;font-weight:700;color:var(--sage);margin-top:6px;">✓ Better option: ${m.betterChoice}</div>
+        <div style="font-size:12px;color:var(--ink3);margin-top:2px;">${m.tip}</div>
+      </div>
+    </div>
+  `).join('');
+
+  const tipsHtml = generalTips.map(t => `<div style="font-size:13px;color:var(--ink2);padding:6px 0;border-bottom:1px solid var(--border);">${t}</div>`).join('');
+
+  container.innerHTML = `
+    <div class="best-moves-card" style="background:var(--sky-light);border:1px solid rgba(43,108,176,0.2);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem;">
+      <div style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--sky);margin-bottom:10px;">📋 Missed Opportunities (${opportunityMisses.length})</div>
+      ${opportunityMisses.length > 0 ? missesHtml : '<p style="font-size:13px;color:var(--ink3);">Solid play throughout — no glaring missed opportunities detected.</p>'}
+    </div>
+    <div style="background:var(--cream2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;">
+      <div style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:10px;">🧠 Strategy Tips for Next Run</div>
+      ${tipsHtml || '<p style="font-size:13px;color:var(--ink3);">You played a strong game — keep applying these habits.</p>'}
+    </div>
+  `;
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -2535,9 +2808,10 @@ function restartGame() {
   selections = {}; charData = {}; gpState = {}; gpHistory = []; gpNetWorthHistory = [];
   gpEvents = []; gpCurrentEventIdx = 0; gpPhase = 'event';
   geminiHistory = []; geminiState = {}; geminiNWHistory = [];
+  randomizedJobs = null;
   if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
-  const savedMsg = document.getElementById('score-saved-msg');
-  if (savedMsg) savedMsg.style.display = 'none';
+  const savedWrap = document.getElementById('score-saved-wrap');
+  if (savedWrap) savedWrap.style.display = 'none';
   const backstory = document.getElementById('backstory-container');
   if (backstory) backstory.style.display = 'none';
   // Reset badge visibility for next beat gemini round

@@ -832,7 +832,14 @@ def gen_gemini_choices():
 
 @app.route("/api/gemini-event-choice", methods=["POST"])
 def gemini_event_choice():
-    """Have Gemini pick the best choice for a single in-game event."""
+    """Have Gemini pick a choice for a single in-game event.
+    
+    To keep Beat Gemini beatable, Gemini makes suboptimal choices ~35% of the time:
+    - 15%: picks randomly from all options (coin flip)
+    - 20%: explicitly picks the worst-looking option (emotionally tempting but costly)
+    - 65%: picks the genuinely best option
+    """
+    import random as _random  # noqa - already imported at module level, alias for clarity inside route
     data = request.json or {}
     event_title = data.get("event_title", "")
     story = data.get("story", "")
@@ -842,6 +849,35 @@ def gemini_event_choice():
     if not choices:
         return jsonify({"choice": None, "reasoning": "No choices available."})
 
+    roll = _random.random()
+
+    # 15% chance: pure random pick (simulates Gemini being distracted / confused)
+    if roll < 0.15:
+        picked = _random.choice(choices)
+        return jsonify({"choice": picked["id"], "reasoning": "Sometimes you just go with your gut."})
+
+    # 20% chance: pick the worst-looking option (high risk, or highest negative consequence)
+    if roll < 0.35:
+        # Score choices — lower is worse
+        def badness(c):
+            score = 0
+            if c.get("riskLevel") == "high": score += 3
+            if c.get("riskLevel") == "med": score += 1
+            ct = c.get("consequenceText", "")
+            score += ct.count("-") * 2
+            score -= ct.count("+") * 2
+            return score
+        worst = max(choices, key=badness)
+        human_reasons = [
+            "This feels like the bold move.",
+            "Taking the risk — fortune favors the brave, right?",
+            "Going with the exciting option here.",
+            "Sometimes you have to bet on yourself.",
+            "This looks too good to pass up.",
+        ]
+        return jsonify({"choice": worst["id"], "reasoning": _random.choice(human_reasons)})
+
+    # 65%: ask Gemini for the optimal choice
     choices_text = "\n".join(
         f"{i+1}. [{c['id']}] {c['title']}: {c['desc']} ({c.get('riskLevel','?')} risk) → {c.get('consequenceText','')}"
         for i, c in enumerate(choices)
@@ -873,7 +909,6 @@ Respond ONLY with valid JSON (no markdown): {{"choice": "choice_id_here", "reaso
                 end = clean.rfind("}") + 1
                 clean = clean[start:end]
             parsed = json.loads(clean)
-            # Validate the choice id
             valid_ids = [c["id"] for c in choices]
             if parsed.get("choice") in valid_ids:
                 return jsonify(parsed)
@@ -883,6 +918,80 @@ Respond ONLY with valid JSON (no markdown): {{"choice": "choice_id_here", "reaso
     # Fallback: pick the low-risk option or first
     fallback = next((c for c in choices if c.get("riskLevel") == "low"), choices[0])
     return jsonify({"choice": fallback["id"], "reasoning": "Chose the safest available option."})
+
+
+@app.route("/api/generate-random-jobs", methods=["POST"])
+def generate_random_jobs():
+    """Use Gemini to generate a diverse randomized set of career options with unique traits."""
+    data = request.json or {}
+    has_college = data.get("has_college", True)
+
+    prompt = f"""You are generating career options for a financial life simulation game.
+Create exactly 6 diverse, interesting career paths. Some should require college (has_college: true), others not.
+{"At least 3 must NOT require college since the player has no degree." if not has_college else "Mix of college and non-college required careers."}
+
+Make them varied and interesting — avoid generic options. Include uncommon careers that still feel realistic.
+Examples of variety: park ranger, court reporter, funeral director, game tester, tattoo artist, maritime officer, air traffic controller, actuary, forensic accountant, film crew, union pipefitter, dispatch operator, urban planner, music producer.
+
+Each career must have realistic salary, stress level (1-10), and growth rate (1-10).
+Salary range: $34,000–$105,000 based on career realism.
+
+Respond ONLY with a JSON array, no markdown:
+[
+  {{
+    "id": "unique_snake_case_id",
+    "icon": "single emoji",
+    "title": "Job Title",
+    "desc": "One sentence: salary range, key tradeoffs, personality fit.",
+    "tags": [["trait1", "green|amber|red|blue"], ["trait2", "green|amber|red|blue"], ["trait3", "green|amber|red|blue"]],
+    "salary": 65000,
+    "stress_start": 6,
+    "growth": 7,
+    "requires_college": false,
+    "trait_bonus": "one_word_trait",
+    "trait_desc": "Short unique trait description (e.g. 'Union protection means layoffs almost never happen')"
+  }}
+]
+
+trait_bonus options: stability, creativity, autonomy, prestige, flexibility, physicality, social_impact, income_ceiling, networking, remote_work
+Ensure salary values are integers. stress_start and growth must be 1-10 integers."""
+
+    result = call_gemini(prompt, max_tokens=1500)
+
+    if result:
+        try:
+            clean = result.strip()
+            if clean.startswith("```"):
+                clean = clean[clean.find("["):clean.rfind("]")+1]
+            jobs = json.loads(clean)
+            if isinstance(jobs, list) and len(jobs) >= 4:
+                # Validate and clean each job
+                cleaned = []
+                for j in jobs[:6]:
+                    cleaned.append({
+                        "id": str(j.get("id", f"job_{len(cleaned)}")),
+                        "icon": str(j.get("icon", "💼")),
+                        "title": str(j.get("title", "Professional")),
+                        "desc": str(j.get("desc", "A professional career path.")),
+                        "tags": j.get("tags", [["career", "blue"]]),
+                        "salary": int(j.get("salary", 55000)),
+                        "stress_start": max(1, min(10, int(j.get("stress_start", 5)))),
+                        "growth": max(1, min(10, int(j.get("growth", 5)))),
+                        "requires_college": bool(j.get("requires_college", False)),
+                        "trait_bonus": str(j.get("trait_bonus", "stability")),
+                        "trait_desc": str(j.get("trait_desc", "A steady career path.")),
+                    })
+                return jsonify({"jobs": cleaned, "source": "gemini"})
+        except Exception as e:
+            print(f"Random jobs parse error: {e}")
+
+    # Fallback: use static careers with some randomization
+    fallback = _random.sample(CAREER_CHOICES, min(6, len(CAREER_CHOICES)))
+    for j in fallback:
+        if "trait_bonus" not in j:
+            j["trait_bonus"] = "stability"
+            j["trait_desc"] = "A well-established career path with predictable progression."
+    return jsonify({"jobs": fallback, "source": "fallback"})
 
 @app.route("/api/compute-results", methods=["POST"])
 def compute():
