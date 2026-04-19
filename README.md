@@ -141,3 +141,87 @@ This project helps users understand:
   - AI opponent decisions  
 
 ---
+## Installation and Setup
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/yourusername/life-simulator.git
+cd life-simulator
+```
+### 2. Install dependencies
+```bash
+pip install flask requests
+```
+### 3. Run the app
+```bash
+python app.py
+```
+### 4. Open in browser
+```bash
+http://127.0.0.1:5000
+```
+
+---
+
+## How to Play
+
+1. Choose a game mode:
+   - Standard  
+   - Random Life  
+   - Beat the AI  
+
+2. Create your character:
+   - Select your background  
+   - Set your starting conditions  
+
+3. Make key life decisions:
+   - Education path  
+   - Career choice  
+   - Housing situation  
+   - Debt strategy  
+
+4. Progress through life year by year:
+   - Respond to events and scenarios  
+   - Adapt your financial strategy  
+
+5. Reach the end of your timeline:
+   - Review your financial results  
+   - Compare your performance  
+
+---
+
+## Future Improvements
+
+- Multiplayer or competitive modes  
+- More advanced tax and investment systems  
+- Expanded life events (family, health, macroeconomics)  
+- Mobile optimization  
+- Save and load game states  
+
+---
+
+## Inspiration
+
+Traditional financial tools answer:
+
+> What happens if I save X?
+
+This project answers:
+
+> What kind of life leads to that outcome?
+
+---
+
+## License
+
+MIT License. You are free to use, modify, and distribute this project.
+
+---
+
+## Author
+
+Built as an interactive exploration of financial decision-making, behavioral economics, and narrative-driven simulation.
+
+---
+
+Your life is the game. Your choices are the strategy.
