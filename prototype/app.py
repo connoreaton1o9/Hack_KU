@@ -192,8 +192,11 @@ CAREER_CHOICES = [
         "tags": [["income↑", "green"], ["stress↑", "red"], ["growth↑", "blue"]],
         "salary": 90000,
         "stress": 7,
+        "stress_start": 7,
         "growth": 9,
-        "requires_college": True
+        "requires_college": True,
+        "trait_bonus": "income_ceiling",
+        "trait_desc": "Strong stock comp and rapid promotions can 2-3x your salary within 5 years."
     },
     {
         "id": "nonprofit",
@@ -203,8 +206,11 @@ CAREER_CHOICES = [
         "tags": [["fulfillment↑", "green"], ["forgiveness", "blue"], ["income↓", "amber"]],
         "salary": 42000,
         "stress": 4,
+        "stress_start": 4,
         "growth": 5,
-        "requires_college": False
+        "requires_college": False,
+        "trait_bonus": "social_impact",
+        "trait_desc": "PSLF eligibility can erase tens of thousands in student debt after 10 years of payments."
     },
     {
         "id": "startup",
@@ -214,8 +220,11 @@ CAREER_CHOICES = [
         "tags": [["equity", "green"], ["risk↑", "red"], ["learning↑", "blue"]],
         "salary": 65000,
         "stress": 8,
+        "stress_start": 8,
         "growth": 8,
-        "requires_college": False
+        "requires_college": False,
+        "trait_bonus": "networking",
+        "trait_desc": "Startup alumni networks open doors that résumés alone never could."
     },
     {
         "id": "skilled_trade_career",
@@ -225,8 +234,11 @@ CAREER_CHOICES = [
         "tags": [["own boss", "green"], ["stable", "blue"], ["physical", "amber"]],
         "salary": 58000,
         "stress": 5,
+        "stress_start": 5,
         "growth": 6,
-        "requires_college": False
+        "requires_college": False,
+        "trait_bonus": "autonomy",
+        "trait_desc": "Business ownership means no income ceiling — your hustle sets your pay."
     },
     {
         "id": "sales",
@@ -236,8 +248,11 @@ CAREER_CHOICES = [
         "tags": [["upside", "green"], ["variable income", "amber"], ["hustle", "blue"]],
         "salary": 62000,
         "stress": 6,
+        "stress_start": 6,
         "growth": 7,
-        "requires_college": False
+        "requires_college": False,
+        "trait_bonus": "flexibility",
+        "trait_desc": "Set your own hours — top performers can earn $150K+ with the right market."
     },
     {
         "id": "healthcare",
@@ -247,8 +262,11 @@ CAREER_CHOICES = [
         "tags": [["job security", "green"], ["meaningful", "blue"], ["demanding", "red"]],
         "salary": 72000,
         "stress": 7,
+        "stress_start": 7,
         "growth": 7,
-        "requires_college": True
+        "requires_college": True,
+        "trait_bonus": "stability",
+        "trait_desc": "Healthcare demand is recession-proof — layoffs are nearly unheard of."
     }
 ]
 
@@ -418,6 +436,52 @@ EMERGENCY_CHOICES = [
         "emergency_cost": 2000,
         "stress_event": False
     }
+]
+
+# ─── CAREER THEME POOLS for varied Gemini prompts ──────────────────────────────
+
+# Each call picks a random theme cluster to keep jobs fresh across playthroughs
+CAREER_THEME_CLUSTERS = [
+    {
+        "label": "creative and media industries",
+        "examples": "graphic designer, podcast producer, video editor, UX researcher, copywriter, museum curator, sound engineer, art director, motion graphics artist, book editor"
+    },
+    {
+        "label": "skilled trades and blue-collar",
+        "examples": "union electrician, commercial diver, elevator mechanic, boilermaker, sheet metal worker, industrial painter, locomotive engineer, pipeline inspector, crane operator, millwright"
+    },
+    {
+        "label": "government, legal, and civic",
+        "examples": "paralegal, court reporter, city planner, customs officer, postal inspector, public defender, legislative aide, municipal auditor, immigration officer, probation officer"
+    },
+    {
+        "label": "healthcare and life sciences",
+        "examples": "dental hygienist, radiologic technologist, EMT, medical coder, clinical researcher, optician, occupational therapist, phlebotomist, health educator, surgical tech"
+    },
+    {
+        "label": "tech-adjacent and emerging fields",
+        "examples": "data annotator, cybersecurity analyst, drone operator, AR/VR developer, technical writer, IT support specialist, cloud systems admin, SEO specialist, QA tester, database administrator"
+    },
+    {
+        "label": "hospitality, food, and service industries",
+        "examples": "executive chef, hotel manager, sommelier, food scientist, event coordinator, wedding planner, catering manager, cruise director, personal trainer, spa director"
+    },
+    {
+        "label": "finance, insurance, and real estate",
+        "examples": "actuary, claims adjuster, mortgage broker, title examiner, financial planner, insurance underwriter, tax preparer, bank examiner, escrow officer, credit analyst"
+    },
+    {
+        "label": "nature, agriculture, and outdoors",
+        "examples": "park ranger, wildlife biologist, hydrologist, arborist, soil scientist, fish hatchery manager, wildfire analyst, marine biologist, agricultural inspector, conservation officer"
+    },
+    {
+        "label": "transportation and logistics",
+        "examples": "air traffic controller, freight broker, maritime officer, supply chain analyst, dispatch operator, railroad conductor, logistics coordinator, port inspector, cargo pilot, long-haul trucker"
+    },
+    {
+        "label": "education and social services",
+        "examples": "school counselor, special education teacher, librarian, social worker, speech-language pathologist, career coach, youth program director, child welfare specialist, ESL teacher, community organizer"
+    },
 ]
 
 # ─── GEMINI GENERATION ─────────────────────────────────────────────────────────
@@ -592,13 +656,56 @@ def get_fallback_scenarios(char_name):
     ]
 
 
+# ─── FALLBACK JOB POOLS ────────────────────────────────────────────────────────
+# Large pool of diverse fallback jobs used when Gemini is unavailable.
+# Each playthrough randomly samples 6 from this list, ensuring variety.
+
+FALLBACK_JOB_POOL = [
+    {"id": "park_ranger", "icon": "🌲", "title": "Park Ranger", "desc": "$48K managing public lands. Outdoors every day, but remote postings and physical demands.", "tags": [["outdoors", "green"], ["stable", "blue"], ["remote", "amber"]], "salary": 48000, "stress_start": 4, "growth": 4, "requires_college": False, "trait_bonus": "autonomy", "trait_desc": "Federal job security means near-impossible layoffs and full pension after 20 years."},
+    {"id": "court_reporter", "icon": "📜", "title": "Court Reporter", "desc": "$62K transcribing legal proceedings. High accuracy required, but strong freelance upside.", "tags": [["niche skill", "blue"], ["freelance", "green"], ["quiet", "amber"]], "salary": 62000, "stress_start": 5, "growth": 5, "requires_college": False, "trait_bonus": "flexibility", "trait_desc": "Certified reporters can freelance depositions for $150+/hr on top of salaried work."},
+    {"id": "actuary", "icon": "📐", "title": "Actuary", "desc": "$95K analyzing risk for insurance firms. Demanding exams, but elite earning ceiling.", "tags": [["income↑↑", "green"], ["exams", "red"], ["prestige", "blue"]], "salary": 95000, "stress_start": 6, "growth": 9, "requires_college": True, "trait_bonus": "income_ceiling", "trait_desc": "Passing all 10 actuarial exams unlocks $200K+ salaries at senior levels."},
+    {"id": "ux_researcher", "icon": "🔍", "title": "UX Researcher", "desc": "$78K studying how people use products. Remote-friendly and growing fast.", "tags": [["remote", "green"], ["creative", "blue"], ["growing", "green"]], "salary": 78000, "stress_start": 5, "growth": 8, "requires_college": True, "trait_bonus": "remote_work", "trait_desc": "90% of UX roles are fully remote — skip commuting forever."},
+    {"id": "elevator_mechanic", "icon": "🛗", "title": "Elevator Mechanic", "desc": "$88K installing and maintaining elevators. Union job with exceptional overtime potential.", "tags": [["union", "green"], ["overtime↑", "green"], ["physical", "amber"]], "salary": 88000, "stress_start": 5, "growth": 5, "requires_college": False, "trait_bonus": "stability", "trait_desc": "Union contracts guarantee overtime rates — many mechanics clear $120K+ annually."},
+    {"id": "air_traffic_controller", "icon": "✈️", "title": "Air Traffic Controller", "desc": "$120K guiding aircraft. Extremely high stress, but one of the best-compensated federal jobs.", "tags": [["income↑↑", "green"], ["stress↑↑", "red"], ["federal", "blue"]], "salary": 120000, "stress_start": 10, "growth": 6, "requires_college": False, "trait_bonus": "income_ceiling", "trait_desc": "Federal pension plus mandatory retirement at 56 means a defined, early finish line."},
+    {"id": "dental_hygienist", "icon": "🦷", "title": "Dental Hygienist", "desc": "$76K cleaning teeth and educating patients. Part-time flexibility and recession-proof demand.", "tags": [["stable", "green"], ["flexible hours", "blue"], ["people", "amber"]], "salary": 76000, "stress_start": 4, "growth": 5, "requires_college": False, "trait_bonus": "flexibility", "trait_desc": "Part-time is common — many hygienists work 3 days a week for full-time pay."},
+    {"id": "supply_chain_analyst", "icon": "📦", "title": "Supply Chain Analyst", "desc": "$68K optimizing logistics for manufacturers or retailers. Desk job with solid growth trajectory.", "tags": [["growing field", "green"], ["analytical", "blue"], ["desk job", "amber"]], "salary": 68000, "stress_start": 5, "growth": 7, "requires_college": True, "trait_bonus": "networking", "trait_desc": "Supply chain certifications (APICS) can jump salary 20-30% overnight."},
+    {"id": "wildlife_biologist", "icon": "🦅", "title": "Wildlife Biologist", "desc": "$55K studying animal populations for agencies or nonprofits. Meaningful but competitive.", "tags": [["meaningful", "green"], ["competitive", "red"], ["fieldwork", "blue"]], "salary": 55000, "stress_start": 4, "growth": 4, "requires_college": True, "trait_bonus": "social_impact", "trait_desc": "Grant-funded research roles can pay $80K+ with full benefits and remote fieldwork."},
+    {"id": "industrial_welder", "icon": "🔥", "title": "Industrial Welder", "desc": "$58K welding pipelines, ships, and structures. Certification boosts pay fast — high overtime.", "tags": [["in demand", "green"], ["overtime↑", "green"], ["physical", "amber"]], "salary": 58000, "stress_start": 5, "growth": 6, "requires_college": False, "trait_bonus": "income_ceiling", "trait_desc": "Underwater welding and pipeline work can pay $150K+ for those willing to specialize."},
+    {"id": "paralegal", "icon": "⚖️", "title": "Paralegal", "desc": "$52K supporting attorneys at law firms or corporations. Stepping stone or solid career.", "tags": [["stable", "blue"], ["detail-oriented", "green"], ["stepping stone", "amber"]], "salary": 52000, "stress_start": 6, "growth": 6, "requires_college": False, "trait_bonus": "networking", "trait_desc": "Many firms sponsor paralegal education — a pathway to law school tuition reimbursement."},
+    {"id": "sound_engineer", "icon": "🎚️", "title": "Sound Engineer", "desc": "$54K mixing audio for studios, live events, or broadcasting. Creative with freelance upside.", "tags": [["creative", "green"], ["freelance", "blue"], ["variable", "amber"]], "salary": 54000, "stress_start": 5, "growth": 6, "requires_college": False, "trait_bonus": "flexibility", "trait_desc": "Top live event engineers earn $800–$2,000 per show day as independent contractors."},
+    {"id": "claims_adjuster", "icon": "🏚️", "title": "Insurance Claims Adjuster", "desc": "$58K investigating and settling insurance claims. Remote-friendly with steady caseloads.", "tags": [["remote", "green"], ["stable", "blue"], ["negotiation", "amber"]], "salary": 58000, "stress_start": 5, "growth": 6, "requires_college": False, "trait_bonus": "remote_work", "trait_desc": "Catastrophe adjusters deployed after storms can earn $100K+ in a single busy season."},
+    {"id": "urban_planner", "icon": "🏙️", "title": "Urban Planner", "desc": "$68K shaping city development for government agencies. Slow-moving but meaningful public work.", "tags": [["civic", "green"], ["stable", "blue"], ["slow growth", "amber"]], "salary": 68000, "stress_start": 4, "growth": 5, "requires_college": True, "trait_bonus": "social_impact", "trait_desc": "Government pension and PSLF eligibility make this deceptively lucrative long-term."},
+    {"id": "radiologic_tech", "icon": "🩻", "title": "Radiologic Technologist", "desc": "$66K operating MRI/X-ray equipment. In-demand healthcare role with predictable hours.", "tags": [["healthcare", "green"], ["in demand", "blue"], ["technical", "amber"]], "salary": 66000, "stress_start": 5, "growth": 6, "requires_college": False, "trait_bonus": "stability", "trait_desc": "Specializing in MRI or CT adds $10–20K — certifications take just a few months."},
+    {"id": "freight_broker", "icon": "🚛", "title": "Freight Broker", "desc": "$60K base + commission connecting shippers with carriers. High hustle, high ceiling.", "tags": [["commission", "green"], ["hustle", "blue"], ["variable", "amber"]], "salary": 60000, "stress_start": 7, "growth": 7, "requires_college": False, "trait_bonus": "income_ceiling", "trait_desc": "Top freight brokers build their own agencies and earn $300K+ in their 30s."},
+    {"id": "librarian", "icon": "📚", "title": "Librarian", "desc": "$52K managing collections and community programs. Underrated job security and PSLF eligible.", "tags": [["PSLF eligible", "green"], ["quiet", "blue"], ["meaningful", "amber"]], "salary": 52000, "stress_start": 3, "growth": 4, "requires_college": True, "trait_bonus": "stability", "trait_desc": "Most library positions carry full benefits and are PSLF eligible — debt forgiveness in 10 years."},
+    {"id": "executive_chef", "icon": "👨‍🍳", "title": "Executive Chef", "desc": "$65K running a restaurant kitchen. Creative and intense — brutal hours, high satisfaction.", "tags": [["creative", "green"], ["intense hours", "red"], ["prestige", "blue"]], "salary": 65000, "stress_start": 9, "growth": 6, "requires_college": False, "trait_bonus": "autonomy", "trait_desc": "Restaurant ownership opens a path to $200K+ — but comes with real financial risk."},
+    {"id": "cybersecurity_analyst", "icon": "🔐", "title": "Cybersecurity Analyst", "desc": "$82K protecting systems from attacks. Exploding demand and almost no unemployment.", "tags": [["in demand↑↑", "green"], ["remote", "green"], ["technical", "blue"]], "salary": 82000, "stress_start": 6, "growth": 9, "requires_college": False, "trait_bonus": "income_ceiling", "trait_desc": "CISSP certification alone can add $30K — and there are more openings than candidates."},
+    {"id": "mortgage_broker", "icon": "🏦", "title": "Mortgage Broker", "desc": "$70K + commission helping people finance homes. Income swings with housing market cycles.", "tags": [["commission", "green"], ["market-sensitive", "amber"], ["people", "blue"]], "salary": 70000, "stress_start": 6, "growth": 7, "requires_college": False, "trait_bonus": "networking", "trait_desc": "A strong referral network can make income nearly recession-proof even in slow markets."},
+    {"id": "drone_operator", "icon": "🚁", "title": "Drone Operator", "desc": "$55K flying commercial drones for mapping, inspection, or media. Fast-growing niche.", "tags": [["growing", "green"], ["flexible", "blue"], ["outdoor", "amber"]], "salary": 55000, "stress_start": 4, "growth": 8, "requires_college": False, "trait_bonus": "flexibility", "trait_desc": "FAA Part 107 license takes 2 weeks — opens $150/hr freelance gigs immediately."},
+    {"id": "speech_pathologist", "icon": "🗣️", "title": "Speech-Language Pathologist", "desc": "$78K helping patients communicate. Strong demand in schools and healthcare — PSLF eligible.", "tags": [["meaningful", "green"], ["PSLF", "blue"], ["stable", "green"]], "salary": 78000, "stress_start": 5, "growth": 6, "requires_college": True, "trait_bonus": "social_impact", "trait_desc": "School SLPs get summers off and full PSLF eligibility — a hidden gem of work-life balance."},
+    {"id": "boilermaker", "icon": "⚙️", "title": "Boilermaker", "desc": "$72K building and repairing pressure systems. Union job with serious overtime during outages.", "tags": [["union", "green"], ["overtime↑", "green"], ["physical", "red"]], "salary": 72000, "stress_start": 6, "growth": 5, "requires_college": False, "trait_bonus": "stability", "trait_desc": "Nuclear and power plant shutdowns require boilermakers around the clock — overtime is massive."},
+    {"id": "technical_writer", "icon": "✍️", "title": "Technical Writer", "desc": "$70K creating docs and manuals for software and engineering firms. Remote-first and chill.", "tags": [["remote", "green"], ["writing", "blue"], ["low stress", "green"]], "salary": 70000, "stress_start": 3, "growth": 6, "requires_college": True, "trait_bonus": "remote_work", "trait_desc": "One of the most remote-compatible careers — nearly all positions are fully work-from-home."},
+    {"id": "event_coordinator", "icon": "🎪", "title": "Event Coordinator", "desc": "$48K organizing conferences and weddings. Chaotic but social — unpredictable hours.", "tags": [["social", "green"], ["irregular hours", "red"], ["creative", "blue"]], "salary": 48000, "stress_start": 7, "growth": 6, "requires_college": False, "trait_bonus": "networking", "trait_desc": "Top event planners build referral networks that generate $100K+ in independent bookings."},
+    {"id": "qa_tester", "icon": "🐛", "title": "QA / Software Tester", "desc": "$58K finding bugs in software products. No coding required — gateway into tech.", "tags": [["tech adjacent", "blue"], ["entry accessible", "green"], ["methodical", "amber"]], "salary": 58000, "stress_start": 4, "growth": 7, "requires_college": False, "trait_bonus": "networking", "trait_desc": "Many QA testers transition into dev or product roles — a foot in the tech door."},
+]
+
+
 # ─── SIMULATION ENGINE ─────────────────────────────────────────────────────────
 
 def compute_results(selections, scenarios=None):
     """Compute financial results based on selections and AI scenarios."""
     
     post_hs = next(c for c in POST_HS_CHOICES if c["id"] == selections["post_hs"])
-    career = next(c for c in CAREER_CHOICES if c["id"] == selections["career"])
+    career = next((c for c in CAREER_CHOICES if c["id"] == selections["career"]), None)
+    
+    # Career might be an AI-generated job not in CAREER_CHOICES — use selections directly
+    if career is None:
+        career = {
+            "salary": selections.get("career_salary", 60000),
+            "growth": selections.get("career_growth", 6),
+            "id": selections["career"]
+        }
+    
     housing = next(c for c in HOUSING_CHOICES if c["id"] == selections["housing"])
     debt = next(c for c in DEBT_CHOICES if c["id"] == selections["debt"])
     lifestyle = next(c for c in LIFESTYLE_CHOICES if c["id"] == selections["lifestyle"])
@@ -701,13 +808,14 @@ def compute_results(selections, scenarios=None):
     score = max(10, min(99, score))
     
     # Build events timeline
+    career_title = career.get("title", selections["career"])
     events = [
         {"age": 18, "icon": "🎓", "text": f"High school graduation. Chose: {post_hs['title']}."},
     ]
     if post_hs["has_college"]:
-        events.append({"age": base_age, "icon": "🎓", "text": f"Completed education. Starting career as: {career['title']}."})
+        events.append({"age": base_age, "icon": "🎓", "text": f"Completed education. Starting career as: {career_title}."})
     else:
-        events.append({"age": base_age, "icon": "💼", "text": f"Entered workforce: {career['title']}."})
+        events.append({"age": base_age, "icon": "💼", "text": f"Entered workforce: {career_title}."})
     
     events.append({"age": base_age + 1, "icon": "🏠", "text": f"Housing: {housing['title']}. Monthly cost: ${housing['rent']:,}."})
     
@@ -832,14 +940,7 @@ def gen_gemini_choices():
 
 @app.route("/api/gemini-event-choice", methods=["POST"])
 def gemini_event_choice():
-    """Have Gemini pick a choice for a single in-game event.
-    
-    To keep Beat Gemini beatable, Gemini makes suboptimal choices ~35% of the time:
-    - 15%: picks randomly from all options (coin flip)
-    - 20%: explicitly picks the worst-looking option (emotionally tempting but costly)
-    - 65%: picks the genuinely best option
-    """
-    import random as _random  # noqa - already imported at module level, alias for clarity inside route
+    """Have Gemini pick a choice for a single in-game event."""
     data = request.json or {}
     event_title = data.get("event_title", "")
     story = data.get("story", "")
@@ -849,16 +950,15 @@ def gemini_event_choice():
     if not choices:
         return jsonify({"choice": None, "reasoning": "No choices available."})
 
-    roll = _random.random()
+    roll = random.random()
 
-    # 15% chance: pure random pick (simulates Gemini being distracted / confused)
+    # 15% chance: pure random pick
     if roll < 0.15:
-        picked = _random.choice(choices)
+        picked = random.choice(choices)
         return jsonify({"choice": picked["id"], "reasoning": "Sometimes you just go with your gut."})
 
-    # 20% chance: pick the worst-looking option (high risk, or highest negative consequence)
+    # 20% chance: pick the worst-looking option
     if roll < 0.35:
-        # Score choices — lower is worse
         def badness(c):
             score = 0
             if c.get("riskLevel") == "high": score += 3
@@ -875,7 +975,7 @@ def gemini_event_choice():
             "Sometimes you have to bet on yourself.",
             "This looks too good to pass up.",
         ]
-        return jsonify({"choice": worst["id"], "reasoning": _random.choice(human_reasons)})
+        return jsonify({"choice": worst["id"], "reasoning": random.choice(human_reasons)})
 
     # 65%: ask Gemini for the optimal choice
     choices_text = "\n".join(
@@ -915,26 +1015,44 @@ Respond ONLY with valid JSON (no markdown): {{"choice": "choice_id_here", "reaso
         except Exception as e:
             print(f"Gemini event choice parse error: {e}")
 
-    # Fallback: pick the low-risk option or first
     fallback = next((c for c in choices if c.get("riskLevel") == "low"), choices[0])
     return jsonify({"choice": fallback["id"], "reasoning": "Chose the safest available option."})
 
 
 @app.route("/api/generate-random-jobs", methods=["POST"])
 def generate_random_jobs():
-    """Use Gemini to generate a diverse randomized set of career options with unique traits."""
+    """
+    Generate a fresh, diverse set of 6 career options every playthrough.
+
+    Strategy:
+    1. Pick a random career theme cluster to guide Gemini toward a specific industry slice.
+    2. Include a random seed phrase so Gemini doesn't cache/repeat a previous response.
+    3. If Gemini fails or returns bad data, sample 6 from the large FALLBACK_JOB_POOL
+       (which has 26 entries), so the fallback is also varied each time.
+    """
     data = request.json or {}
     has_college = data.get("has_college", True)
 
-    prompt = f"""You are generating career options for a financial life simulation game.
-Create exactly 6 diverse, interesting career paths. Some should require college (has_college: true), others not.
-{"At least 3 must NOT require college since the player has no degree." if not has_college else "Mix of college and non-college required careers."}
+    # Pick a random industry theme so each call is guided differently
+    theme = random.choice(CAREER_THEME_CLUSTERS)
+    seed_word = random.choice([
+        "innovative", "underrated", "surprising", "diverse", "eclectic",
+        "uncommon", "realistic", "gritty", "varied", "unexpected"
+    ])
 
-Make them varied and interesting — avoid generic options. Include uncommon careers that still feel realistic.
-Examples of variety: park ranger, court reporter, funeral director, game tester, tattoo artist, maritime officer, air traffic controller, actuary, forensic accountant, film crew, union pipefitter, dispatch operator, urban planner, music producer.
+    prompt = f"""You are generating {seed_word} career options for a financial life simulation game.
+Focus primarily on {theme['label']}.
+Example careers in this space (do NOT use these exact titles — invent fresh variants or related roles):
+{theme['examples']}
 
-Each career must have realistic salary, stress level (1-10), and growth rate (1-10).
-Salary range: $34,000–$105,000 based on career realism.
+Create exactly 6 distinct careers. Mix college-required and non-college paths.
+{"At least 3 must NOT require college since the player has no degree." if not has_college else "At least 2 should NOT require college for variety."}
+
+Rules:
+- Salary range: $34,000–$115,000 (realistic for that career)
+- stress_start and growth: integers 1–10
+- Make descriptions vivid and specific — mention actual dollar ranges and real tradeoffs
+- trait_desc should reveal a non-obvious financial insight about this career
 
 Respond ONLY with a JSON array, no markdown:
 [
@@ -942,21 +1060,20 @@ Respond ONLY with a JSON array, no markdown:
     "id": "unique_snake_case_id",
     "icon": "single emoji",
     "title": "Job Title",
-    "desc": "One sentence: salary range, key tradeoffs, personality fit.",
+    "desc": "One punchy sentence: salary range, key tradeoffs, personality fit.",
     "tags": [["trait1", "green|amber|red|blue"], ["trait2", "green|amber|red|blue"], ["trait3", "green|amber|red|blue"]],
     "salary": 65000,
     "stress_start": 6,
     "growth": 7,
     "requires_college": false,
     "trait_bonus": "one_word_trait",
-    "trait_desc": "Short unique trait description (e.g. 'Union protection means layoffs almost never happen')"
+    "trait_desc": "Non-obvious financial insight about this career."
   }}
 ]
 
-trait_bonus options: stability, creativity, autonomy, prestige, flexibility, physicality, social_impact, income_ceiling, networking, remote_work
-Ensure salary values are integers. stress_start and growth must be 1-10 integers."""
+trait_bonus options: stability, creativity, autonomy, prestige, flexibility, physicality, social_impact, income_ceiling, networking, remote_work"""
 
-    result = call_gemini(prompt, max_tokens=1500)
+    result = call_gemini(prompt, max_tokens=1800)
 
     if result:
         try:
@@ -965,7 +1082,6 @@ Ensure salary values are integers. stress_start and growth must be 1-10 integers
                 clean = clean[clean.find("["):clean.rfind("]")+1]
             jobs = json.loads(clean)
             if isinstance(jobs, list) and len(jobs) >= 4:
-                # Validate and clean each job
                 cleaned = []
                 for j in jobs[:6]:
                     cleaned.append({
@@ -981,17 +1097,25 @@ Ensure salary values are integers. stress_start and growth must be 1-10 integers
                         "trait_bonus": str(j.get("trait_bonus", "stability")),
                         "trait_desc": str(j.get("trait_desc", "A steady career path.")),
                     })
-                return jsonify({"jobs": cleaned, "source": "gemini"})
+                return jsonify({"jobs": cleaned, "source": "gemini", "theme": theme["label"]})
         except Exception as e:
             print(f"Random jobs parse error: {e}")
 
-    # Fallback: use static careers with some randomization
-    fallback = _random.sample(CAREER_CHOICES, min(6, len(CAREER_CHOICES)))
-    for j in fallback:
-        if "trait_bonus" not in j:
-            j["trait_bonus"] = "stability"
-            j["trait_desc"] = "A well-established career path with predictable progression."
-    return jsonify({"jobs": fallback, "source": "fallback"})
+    # Fallback: sample 6 random jobs from the large pool — varied each time
+    pool = FALLBACK_JOB_POOL.copy()
+    if not has_college:
+        # Prefer non-college jobs but fill remaining slots from full pool
+        no_degree = [j for j in pool if not j["requires_college"]]
+        with_degree = [j for j in pool if j["requires_college"]]
+        random.shuffle(no_degree)
+        random.shuffle(with_degree)
+        fallback = (no_degree[:4] + with_degree[:2])[:6]
+    else:
+        random.shuffle(pool)
+        fallback = pool[:6]
+
+    return jsonify({"jobs": fallback, "source": "fallback", "theme": theme["label"]})
+
 
 @app.route("/api/compute-results", methods=["POST"])
 def compute():

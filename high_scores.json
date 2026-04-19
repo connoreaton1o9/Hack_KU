@@ -21,6 +21,22 @@
     "timestamp": 1776538908
   },
   {
+    "name": "Skyler Martinez",
+    "score": 90,
+    "net_worth": 120867,
+    "mode": "random",
+    "game_length": "10 Years",
+    "timestamp": 1776570591
+  },
+  {
+    "name": "Cameron Anderson",
+    "score": 60,
+    "net_worth": 31392,
+    "mode": "random",
+    "game_length": "10 Years",
+    "timestamp": 1776569539
+  },
+  {
     "name": "Skyler Garcia",
     "score": 43,
     "net_worth": 78385,
@@ -33,6 +49,14 @@
     "net_worth": 52230,
     "mode": "standard",
     "timestamp": 1776540427
+  },
+  {
+    "name": "Jamie Chen",
+    "score": 31,
+    "net_worth": 1291,
+    "mode": "random",
+    "game_length": "10 Years",
+    "timestamp": 1776570311
   },
   {
     "name": "Reese Rivera",
