@@ -29,6 +29,22 @@
     "timestamp": 1776570591
   },
   {
+    "name": "Reese Patel",
+    "score": 84,
+    "net_worth": 81925,
+    "mode": "standard",
+    "game_length": "10 Years",
+    "timestamp": 1776573597
+  },
+  {
+    "name": "Finley Kim",
+    "score": 77,
+    "net_worth": 73572,
+    "mode": "random",
+    "game_length": "10 Years",
+    "timestamp": 1776573563
+  },
+  {
     "name": "Cameron Anderson",
     "score": 60,
     "net_worth": 31392,
