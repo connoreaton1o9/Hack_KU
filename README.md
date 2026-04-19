@@ -152,11 +152,15 @@ cd life-simulator
 ```bash
 pip install flask requests
 ```
-### 3. Run the app
+### 3. Insert Gemini API key
+```bash
+prototype/gemini-api-key
+```
+### 4. Run the app
 ```bash
 python app.py
 ```
-### 4. Open in browser
+### 5. Open in browser
 ```bash
 http://127.0.0.1:5000
 ```
