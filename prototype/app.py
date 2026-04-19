@@ -15,7 +15,10 @@ from flask import Flask, render_template, jsonify, request, send_from_directory
 
 app = Flask(__name__, template_folder=".", static_folder="static")
 
-GEMINI_API_KEY = "AIzaSyBemhMWACYs1z3pzaxX7r53Gf3E65-yvBQ"
+GEMINI_API_KEY_FILE = open('prototype/gemini-api-key', 'r')
+for key in GEMINI_API_KEY_FILE:
+    GEMINI_API_KEY = key.strip('\n')
+GEMINI_API_KEY_FILE.close()
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
 HIGH_SCORES_FILE = "high_scores.json"
 
